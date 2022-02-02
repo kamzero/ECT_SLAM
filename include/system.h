@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "config.h"
 
 namespace ECT_SLAM
 {
@@ -24,13 +25,14 @@ public:
 public:
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const std::string &strSettingsFile, const eSensor sensor);
+    System(const std::string &config_path, const eSensor sensor);
 
     // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
 
+    bool Init();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
@@ -47,6 +49,8 @@ public:
 
 private:
 
+    std::string config_file_path_;
+    eSensor sensor_;
 
 };
 

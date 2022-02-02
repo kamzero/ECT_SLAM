@@ -1,5 +1,5 @@
 
-#include "System.h"
+#include "system.h"
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
@@ -10,16 +10,26 @@
 namespace ECT_SLAM
 {
 
-System::System(const std::string &strSettingsFile, const eSensor sensor)
-{
+System::System(const std::string &config_path, const eSensor sensor):
+config_file_path_(config_path), sensor_(sensor)
+{}
 
-    std::cout << "Input sensor was set to: ";
+bool System::Init() {
 
-    if(sensor==MONOCULAR)
+    // read from config file
+    if (Config::SetParameterFile(config_file_path_) == false) {
+        return false;
+    }
+
+    std::cout << "The input sensor was set to: ";
+
+    if(sensor_==MONOCULAR)
         std::cout << "Monocular" << std::endl;
-    else if(sensor==DVS)
+    else if(sensor_==DVS)
         std::cout << "DVS" << std::endl;
 
+    
+    return true;
 }
 
 cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)

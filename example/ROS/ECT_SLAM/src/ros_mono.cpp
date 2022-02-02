@@ -9,7 +9,7 @@
 
 #include<opencv2/core/core.hpp>
 
-#include"System.h"
+#include"system.h"
 
 using namespace std;
 
@@ -37,6 +37,8 @@ int main(int argc, char **argv)
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ECT_SLAM::System SLAM(argv[1],ECT_SLAM::System::MONOCULAR);
+    SLAM.Init();
+
 
     ImageGrabber igb(&SLAM);
 
