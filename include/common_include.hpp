@@ -16,7 +16,9 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <vector>
-
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 // define the commonly included file to avoid a long include list
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -98,12 +100,12 @@ typedef Eigen::Matrix<float, 9, 1> Vec9f;
 typedef Eigen::Matrix<float, Eigen::Dynamic, 1> VecXf;
 typedef Eigen::Matrix<float, 14, 1> Vec14f;
 
-// // for Sophus
-// #include <sophus/se3.hpp>
-// #include <sophus/so3.hpp>
+// for Sophus
+#include <sophus/se3.hpp>
+#include <sophus/so3.hpp>
 
-// typedef Sophus::SE3d SE3;
-// typedef Sophus::SO3d SO3;
+typedef Sophus::SE3d SE3;
+typedef Sophus::SO3d SO3;
 
 // for cv
 #include <opencv2/core/core.hpp>

@@ -7,7 +7,11 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
+#include "config.hpp"
+#include "map.hpp"
+#include "frontend.hpp"
+#include "backend.hpp"
+#include "viewer.hpp"
 
 namespace ECT_SLAM
 {
@@ -46,12 +50,16 @@ public:
     void SaveKeyFrameTrajectory(const std::string &filename);
 
 
-
 private:
 
     std::string config_file_path_;
     eSensor sensor_;
 
+    Frontend::Ptr frontend_ = nullptr;
+    Backend::Ptr backend_ = nullptr;
+    Map::Ptr map_ = nullptr;
+    Viewer::Ptr viewer_ = nullptr;
+    Camera::Ptr camera_ = nullptr;
 };
 
 }// namespace ECT_SLAM

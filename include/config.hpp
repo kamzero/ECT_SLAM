@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common_include.h"
+#include "common_include.hpp"
 
 namespace ECT_SLAM {
 

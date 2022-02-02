@@ -1,4 +1,4 @@
-#include "config.h"
+#include "config.hpp"
 
 namespace ECT_SLAM {
 bool Config::SetParameterFile(const std::string &filename) {

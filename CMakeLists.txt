@@ -29,6 +29,15 @@ endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(FMT REQUIRED)
+# pangolin
+find_package(Pangolin REQUIRED)
+include_directories(${Pangolin_INCLUDE_DIRS})
+
+# Sophus
+find_package(Sophus REQUIRED)
+# set(Sophus_LIBRARIES libSophus.so)
+include_directories(${Sophus_INCLUDE_DIRS})
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -40,8 +49,16 @@ ${Pangolin_INCLUDE_DIRS}
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 add_library(${PROJECT_NAME} SHARED
-src/system.cc
+src/system.cpp
 src/config.cpp
+src/frontend.cpp
+src/backend.cpp
+src/viewer.cpp
+src/frame.cpp
+src/feature.cpp
+src/map.cpp
+src/mappoint.cpp
+src/camera.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -49,6 +66,11 @@ ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 pthread
+)
+
+target_link_libraries(${PROJECT_NAME}
+${Sophus_LIBRARIES} 
+fmt::fmt
 )
 
 # Build examples

@@ -9,7 +9,7 @@
 
 #include<opencv2/core/core.hpp>
 
-#include"system.h"
+#include"system.hpp"
 
 using namespace std;
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     ImageGrabber igb(&SLAM);
 
     ros::NodeHandle nodeHandler;
-    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage,&igb);
+    ros::Subscriber sub = nodeHandler.subscribe("/cam0/image_raw", 1, &ImageGrabber::GrabImage,&igb);
 
     ros::spin();
 
@@ -72,7 +72,6 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    mpSLAM->TrackMonocular(cv_ptr->image, cv_ptr->header.stamp.toSec());
 }
 
 
