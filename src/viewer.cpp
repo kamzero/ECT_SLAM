@@ -12,7 +12,7 @@ Viewer::Viewer() {
     viewer_thread_ = std::thread(std::bind(&Viewer::ThreadLoop, this));
 }
 void Viewer::ThreadLoop() {
-    while (!viewer_running_) {
+    while (viewer_running_) {
         usleep(5000);
     }
 
