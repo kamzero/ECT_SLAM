@@ -19,9 +19,9 @@ Frontend::Frontend() {
 
 bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame) {
     current_frame_ = frame;
-
     switch (status_) {
         case FrontendStatus::INITING:
+            Init();
             break;
         case FrontendStatus::TRACKING_GOOD:
         case FrontendStatus::TRACKING_BAD:
@@ -36,7 +36,15 @@ bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame) {
     return true;
 }
 
+bool Frontend::Init() {
+    std::cout << "Initing...\n";
+    status_ = FrontendStatus::TRACKING_GOOD;
+    return true;
+}
+
 bool Frontend::Track() {
+    std::cout << "Tracking...\n";
+
     if (last_frame_) {
         current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
     }

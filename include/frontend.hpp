@@ -42,6 +42,12 @@ class Frontend {
 
    private:
     /**
+     * Initialize
+     * @return true if success
+     */
+    bool Init();
+
+    /**
      * Track in normal mode
      * @return true if success
      */

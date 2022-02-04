@@ -53,6 +53,10 @@ namespace ECT_SLAM
 
     cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
     {
+        auto new_frame = Frame::CreateFrame();
+        new_frame->img_ = im;
+        new_frame->time_stamp_ = timestamp;
+        bool success = frontend_->AddFrame(new_frame);
         return im;
     }
 

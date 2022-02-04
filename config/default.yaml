@@ -12,3 +12,6 @@ camera.cy: 249.7
 num_features: 150
 num_features_init: 50
 num_features_tracking: 50
+
+# ros
+# img_topic: "cam0/image_raw"
