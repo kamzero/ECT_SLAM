@@ -19,4 +19,9 @@ void Viewer::ThreadLoop() {
     std::cout << "Stop viewer\n";
 }
 
+void Viewer::Close() {
+    viewer_running_ = false;
+    viewer_thread_.join();
+}
+
 }  // namespace ECT_SLAM

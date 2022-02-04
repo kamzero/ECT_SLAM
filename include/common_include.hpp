@@ -1,6 +1,7 @@
 #pragma once
 #ifndef ECT_SLAM_COMMON_INCLUDE_H
 #define ECT_SLAM_COMMON_INCLUDE_H
+#define FMT_HEADER_ONLY
 
 // std
 #include <atomic>

@@ -23,9 +23,11 @@ class Viewer {
 
     void SetMap(Map::Ptr map) { map_ = map; }
 
+    void Close();
 
    private:
     void ThreadLoop();
+
     Map::Ptr map_ = nullptr;
 
     std::thread viewer_thread_;

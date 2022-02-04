@@ -58,6 +58,8 @@ namespace ECT_SLAM
 
     void System::Shutdown()
     {
+        backend_->Stop();
+        viewer_->Close();
     }
 
     void System::SaveKeyFrameTrajectory(const std::string &filename)

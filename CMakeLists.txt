@@ -27,17 +27,14 @@ if(NOT OpenCV_FOUND)
    endif()
 endif()
 
-find_package(Eigen3 3.1.0 REQUIRED)
-find_package(Pangolin REQUIRED)
-find_package(FMT REQUIRED)
+find_package(Eigen3 REQUIRED)
 # pangolin
 find_package(Pangolin REQUIRED)
-include_directories(${Pangolin_INCLUDE_DIRS})
 
 # Sophus
 find_package(Sophus REQUIRED)
 # set(Sophus_LIBRARIES libSophus.so)
-include_directories(${Sophus_INCLUDE_DIRS})
+# include_directories(${Sophus_INCLUDE_DIRS})
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
