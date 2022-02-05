@@ -7,19 +7,23 @@
 #include "frontend.hpp"
 #include "map.hpp"
 #include "viewer.hpp"
+#include "orb.hpp"
 
-namespace ECT_SLAM {
+namespace ECT_SLAM
+{
 
-Frontend::Frontend() {
-    gftt_ =
-        cv::GFTTDetector::create(Config::Get<int>("num_features"), 0.01, 20);
-    num_features_init_ = Config::Get<int>("num_features_init");
-    num_features_ = Config::Get<int>("num_features");
-}
+    Frontend::Frontend()
+    {
+        orb_ = cv::ORB::create();
+        num_features_init_ = Config::Get<int>("num_features_init");
+        num_features_ = Config::Get<int>("num_features");
+    }
 
-bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame) {
-    current_frame_ = frame;
-    switch (status_) {
+    bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame)
+    {
+        current_frame_ = frame;
+        switch (status_)
+        {
         case FrontendStatus::INITING:
             Init();
             break;
@@ -30,36 +34,57 @@ bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame) {
         case FrontendStatus::LOST:
             Reset();
             break;
+        }
+
+        last_frame_ = current_frame_;
+        return true;
     }
 
-    last_frame_ = current_frame_;
-    return true;
-}
+    bool Frontend::Init()
+    {
+        std::cout << "Initing...\n";
+        DetectFeature();
 
-bool Frontend::Init() {
-    std::cout << "Initing...\n";
-    status_ = FrontendStatus::TRACKING_GOOD;
-    return true;
-}
-
-bool Frontend::Track() {
-    std::cout << "Tracking...\n";
-
-    if (last_frame_) {
-        current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
+        status_ = FrontendStatus::TRACKING_GOOD;
+        return true;
     }
 
-    status_ = FrontendStatus::TRACKING_GOOD;
+    bool Frontend::Track()
+    {
+        std::cout << "Tracking No." << current_frame_->id_ << " ...\n";
 
-    relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
+        if (last_frame_)
+        {
+            current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
+        }
 
-    return true;
-}
+        status_ = FrontendStatus::TRACKING_GOOD;
 
+        relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
 
-bool Frontend::Reset() {
-    std::cout << "Reset is not implemented. " << std::endl;
-    return true;
-}
+        return true;
+    }
 
-}  // namespace ECT_SLAM
+    bool Frontend::Reset()
+    {
+        std::cout << "Reset is not implemented. " << std::endl;
+        return true;
+    }
+
+    bool Frontend::DetectFeature(){
+        std::vector<cv::KeyPoint> keypoints;
+        std::vector<DescType> descriptors;
+        cv::FAST(current_frame_->img_, keypoints, 40);
+        ComputeORB(current_frame_->img_, keypoints, descriptors);
+
+        for(int i = 0; i < keypoints.size(); i++){
+            if(!descriptors[i].size()) continue;
+            Feature::Ptr feature(new Feature(current_frame_, keypoints[i], descriptors[i]));
+            current_frame_->features_.push_back(feature);
+        }
+
+        // std::cout << current_frame_->features_.size() << " / " <<  keypoints.size()<< std::endl;
+        return true;
+    }
+
+} // namespace ECT_SLAM

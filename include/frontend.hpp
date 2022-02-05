@@ -59,6 +59,12 @@ class Frontend {
      */
     bool Reset();
 
+    /**
+     * Detect Feature & Calculate ORB Descriptors
+     * @return true if success
+     */
+    bool DetectFeature();
+
     // data
     FrontendStatus status_ = FrontendStatus::INITING;
 
@@ -82,7 +88,7 @@ class Frontend {
     int num_features_needed_for_keyframe_ = 80;
 
     // utilities
-    cv::Ptr<cv::GFTTDetector> gftt_;  // feature detector in opencv
+    cv::Ptr<cv::ORB> orb_;  // feature detector in opencv
 };
 
 }  // namespace ECT_SLAM

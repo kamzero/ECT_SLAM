@@ -7,13 +7,14 @@ ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
+add_definitions("-DENABLE_SSE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
 
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall  -O2 ${SSE_FLAGS} -msse4")
 set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++11 -O3 -fopenmp -pthread")
 
 
@@ -56,6 +57,7 @@ src/feature.cpp
 src/map.cpp
 src/mappoint.cpp
 src/camera.cpp
+src/orb.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
