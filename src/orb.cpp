@@ -262,6 +262,7 @@ int ORB_pattern[256 * 4] = {
     -1, -6, 0, -11 /*mean (0.127148), correlation (0.547401)*/
 };
 
+
 // compute the descriptor
 void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<DescType> &descriptors)
 {
@@ -275,7 +276,7 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
         {
             // outside
             bad_points++;
-            descriptors.push_back({});
+            // descriptors.push_back({});
             continue;
         }
 

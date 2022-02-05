@@ -65,11 +65,19 @@ class Frontend {
      */
     bool DetectFeature();
 
+    /**
+     * Find Essential Matrix & Recover T\R & Triangulate to Init Map
+     * @return true if success
+     */
+    bool MatchAndBuildMap();
+
     // data
     FrontendStatus status_ = FrontendStatus::INITING;
 
     Frame::Ptr current_frame_ = nullptr;  // 当前帧
     Frame::Ptr last_frame_ = nullptr;     // 上一帧
+    Frame::Ptr first_frame_ = nullptr;     // 第0帧
+
     Camera::Ptr camera_ = nullptr;   // 左侧相机
 
     Map::Ptr map_ = nullptr;

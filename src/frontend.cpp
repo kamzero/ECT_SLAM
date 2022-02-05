@@ -22,6 +22,9 @@ namespace ECT_SLAM
     bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame)
     {
         current_frame_ = frame;
+        if (current_frame_->id_ == 0)
+            first_frame_ = frame;
+
         switch (status_)
         {
         case FrontendStatus::INITING:
@@ -35,7 +38,7 @@ namespace ECT_SLAM
             Reset();
             break;
         }
-
+        
         last_frame_ = current_frame_;
         return true;
     }
@@ -43,9 +46,15 @@ namespace ECT_SLAM
     bool Frontend::Init()
     {
         std::cout << "Initing...\n";
+
         DetectFeature();
 
-        status_ = FrontendStatus::TRACKING_GOOD;
+        if (current_frame_->id_  == 5){
+            MatchAndBuildMap();
+
+            status_ = FrontendStatus::TRACKING_GOOD;
+        }
+
         return true;
     }
 
@@ -71,19 +80,26 @@ namespace ECT_SLAM
         return true;
     }
 
-    bool Frontend::DetectFeature(){
+    bool Frontend::DetectFeature()
+    {
         std::vector<cv::KeyPoint> keypoints;
-        std::vector<DescType> descriptors;
         cv::FAST(current_frame_->img_, keypoints, 40);
-        ComputeORB(current_frame_->img_, keypoints, descriptors);
+        ComputeORB(current_frame_->img_, keypoints, current_frame_->descriptors_);
 
-        for(int i = 0; i < keypoints.size(); i++){
-            if(!descriptors[i].size()) continue;
-            Feature::Ptr feature(new Feature(current_frame_, keypoints[i], descriptors[i]));
+        for (int i = 0; i < keypoints.size(); i++)
+        {
+            Feature::Ptr feature(new Feature(current_frame_, keypoints[i]));
             current_frame_->features_.push_back(feature);
         }
 
         // std::cout << current_frame_->features_.size() << " / " <<  keypoints.size()<< std::endl;
+        return true;
+    }
+
+    bool Frontend::MatchAndBuildMap(){
+        std::vector<cv::DMatch> matches;
+        BfMatch(first_frame_->descriptors_, current_frame_->descriptors_, matches);
+        
         return true;
     }
 
