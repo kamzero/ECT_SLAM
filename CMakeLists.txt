@@ -7,13 +7,14 @@ ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
+add_definitions("-DENABLE_SSE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
 
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall  -O2 ${SSE_FLAGS} -msse4")
 set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++11 -O3 -fopenmp -pthread")
 
 
@@ -27,8 +28,14 @@ if(NOT OpenCV_FOUND)
    endif()
 endif()
 
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 REQUIRED)
+# pangolin
 find_package(Pangolin REQUIRED)
+
+# Sophus
+find_package(Sophus REQUIRED)
+# set(Sophus_LIBRARIES libSophus.so)
+# include_directories(${Sophus_INCLUDE_DIRS})
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -40,8 +47,17 @@ ${Pangolin_INCLUDE_DIRS}
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 add_library(${PROJECT_NAME} SHARED
-src/system.cc
+src/system.cpp
 src/config.cpp
+src/frontend.cpp
+src/backend.cpp
+src/viewer.cpp
+src/frame.cpp
+src/feature.cpp
+src/map.cpp
+src/mappoint.cpp
+src/camera.cpp
+src/orb.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -49,6 +65,11 @@ ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 pthread
+)
+
+target_link_libraries(${PROJECT_NAME}
+${Sophus_LIBRARIES} 
+fmt::fmt
 )
 
 # Build examples
