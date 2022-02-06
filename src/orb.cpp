@@ -269,14 +269,16 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
     const int half_patch_size = 8;
     const int half_boundary = 16;
     int bad_points = 0;
+    std::cout << keypoints.size() << " " << img.cols << "," << img.rows << std::endl;
     for (auto &kp : keypoints)
     {
-        if (kp.pt.x < half_boundary || kp.pt.y < half_boundary ||
-            kp.pt.x >= img.cols - half_boundary || kp.pt.y >= img.rows - half_boundary)
+        if (kp.pt.x <= half_boundary || kp.pt.y <= half_boundary ||
+            kp.pt.x > img.cols - half_boundary || kp.pt.y > img.rows - half_boundary)
         {
             // outside
             bad_points++;
-            // descriptors.push_back({});
+            descriptors.push_back({});
+
             continue;
         }
 
@@ -290,6 +292,7 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
                 m01 += dy * pixel;
             }
         }
+        std::cout << kp.pt.x << "," << kp.pt.y << std::endl;
 
         // angle should be arc tan(m01/m10);
         float m_sqrt = sqrt(m01 * m01 + m10 * m10) + 1e-18; // avoid divide by zero
@@ -316,6 +319,7 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
                 }
             }
             desc[i] = d;
+
         }
         descriptors.push_back(desc);
     }

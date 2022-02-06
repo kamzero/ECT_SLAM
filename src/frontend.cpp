@@ -61,7 +61,7 @@ namespace ECT_SLAM
     bool Frontend::Track()
     {
         std::cout << "Tracking No." << current_frame_->id_ << " ...\n";
-
+        DetectFeature();
         if (last_frame_)
         {
             current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
@@ -91,8 +91,8 @@ namespace ECT_SLAM
             Feature::Ptr feature(new Feature(current_frame_, keypoints[i]));
             current_frame_->features_.push_back(feature);
         }
-
-        // std::cout << current_frame_->features_.size() << " / " <<  keypoints.size()<< std::endl;
+        std::cout << current_frame_->features_.size() << std::endl;
+        
         return true;
     }
 
