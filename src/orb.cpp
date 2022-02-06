@@ -292,7 +292,6 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
                 m01 += dy * pixel;
             }
         }
-        std::cout << kp.pt.x << "," << kp.pt.y << std::endl;
 
         // angle should be arc tan(m01/m10);
         float m_sqrt = sqrt(m01 * m01 + m10 * m10) + 1e-18; // avoid divide by zero
