@@ -269,7 +269,6 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
     const int half_patch_size = 8;
     const int half_boundary = 16;
     int bad_points = 0;
-    std::cout << keypoints.size() << " " << img.cols << "," << img.rows << std::endl;
     for (auto &kp : keypoints)
     {
         if (kp.pt.x <= half_boundary || kp.pt.y <= half_boundary ||
