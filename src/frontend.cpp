@@ -129,10 +129,9 @@ namespace ECT_SLAM
         cv::Mat pointsH(1, matches.size(), CV_32FC4);
         cv::Mat points3F;
         cv::triangulatePoints(P1, P2, points1, points2, pointsH);
-        cv::Mat pointsCH = pointsH.reshape(4);
-        std::cout << "----map_points CH----\n" << pointsCH.rows << " " << pointsCH.cols << " " << pointsCH.channels() << " " << pointsCH.type() << std::endl;
-        cv::convertPointsFromHomogeneous(pointsCH, points3F);
-        std::cout << "----map_points 3F----\n" << points3F.rows << " " << points3F.cols << " " << points3F.channels() << " " << points3F.type() << std::endl;
+        // std::cout << points1.size() << std::endl;
+        cv::convertPointsFromHomogeneous(pointsH.t(), points3F);
+        // std::cout << "----map_points 3F----\n" << points3F.rows << " " << points3F.cols << " " << points3F.channels() << " " << points3F.type() << std::endl;
 
         SE3 pose_Tcw = frame1->Pose().inverse();
         for (int i = 0; i < matches.size(); i++)
@@ -178,8 +177,8 @@ namespace ECT_SLAM
         // std::cout << "------t------\n"<<t <<std::endl;
         // std::cout << "-----t_e------\n"<<t_e <<std::endl;
         // std::cout << "-----se3-----\n"<< pose.log() << std::endl;
-        std::cout << "-----SE3-----\n"
-                  << pose.matrix() << std::endl;
+        // std::cout << "-----SE3-----\n"
+        //           << pose.matrix() << std::endl;
         return true;
     }
 
