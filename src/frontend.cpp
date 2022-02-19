@@ -66,9 +66,10 @@ namespace ECT_SLAM
         // initial guess
         current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
 
+        //!--------------PnP Estimate With 2D-3D Matches(map)-------------------------- 
 
         //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
-        MatchAndBuildMap(last_frame_, current_frame_);
+        MatchAndUpdateMap(last_frame_, current_frame_);
 
         // end stage
         status_ = FrontendStatus::TRACKING_GOOD;
@@ -196,6 +197,18 @@ namespace ECT_SLAM
         //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
         Trangulation(frame1, frame2, matches, points1, points2);
 
+        return true;
+    }
+
+    bool Frontend::MatchAndUpdateMap(Frame::Ptr frame1, Frame::Ptr frame2)
+    {
+        std::vector<cv::DMatch> matches;
+        std::vector<cv::Point2f> points1, points2;
+        //!-----------------------Match----------------------------
+        if (!Match2D2D(frame1, frame2, matches, points1, points2))
+            return false;
+        //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
+        Trangulation(frame1, frame2, matches, points1, points2);
         return true;
     }
 
