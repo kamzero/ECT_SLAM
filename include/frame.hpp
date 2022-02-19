@@ -42,6 +42,10 @@ struct Frame {
         return pose_;
     }
 
+    Mat34f RT(){
+        return Pose().matrix().block<3, 4>(0, 0).cast <float>();
+    }
+
     void SetPose(const SE3 &pose) {
         std::unique_lock<std::mutex> lck(pose_mutex_);
         pose_ = pose;

@@ -19,10 +19,15 @@ class Camera {
     }
 
     // return intrinsic matrix
-    Mat33 K() const {
-        Mat33 k;
+    Mat33f K() const {
+        Mat33f k;
         k << fx_, 0, cx_, 0, fy_, cy_, 0, 0, 1;
         return k;
+    }
+
+    // return intrinsic matrix
+    cv::Mat K_cv() const {
+        return (cv::Mat1d(3, 3) << fx_, 0, cx_, 0, fy_, cy_, 0, 0, 1);
     }
 
     // coordinate transform: world, camera, pixel

@@ -55,9 +55,11 @@ typedef Eigen::Matrix<double, 14, 14> Mat1414;
 
 // float matricies
 typedef Eigen::Matrix<float, 3, 3> Mat33f;
+typedef Eigen::Matrix<float, 3, 4> Mat34f;
 typedef Eigen::Matrix<float, 10, 3> Mat103f;
 typedef Eigen::Matrix<float, 2, 2> Mat22f;
 typedef Eigen::Matrix<float, 3, 1> Vec3f;
+typedef Eigen::Matrix<float, 4, 1> Vec4f;
 typedef Eigen::Matrix<float, 2, 1> Vec2f;
 typedef Eigen::Matrix<float, 6, 1> Vec6f;
 typedef Eigen::Matrix<float, 1, 8> Mat18f;
@@ -110,6 +112,7 @@ typedef Sophus::SO3d SO3;
 
 // for cv
 #include <opencv2/core/core.hpp>
+#include <opencv2/core/eigen.hpp>
 
 using cv::Mat;
 
