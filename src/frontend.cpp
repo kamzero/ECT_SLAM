@@ -51,7 +51,7 @@ namespace ECT_SLAM
 
         if (current_frame_->id_ >= 5)
         {
-            if (MatchAndBuildMap())
+            if (MatchAndBuildMap(first_frame_, current_frame_))
                 status_ = FrontendStatus::TRACKING_GOOD;
         }
 
@@ -61,14 +61,17 @@ namespace ECT_SLAM
     bool Frontend::Track()
     {
         std::cout << "Tracking No." << current_frame_->id_ << " ...\n";
+
         DetectFeature();
-
         // initial guess
-        // current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
-        current_frame_->SetPose(last_frame_->Pose());
+        current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
 
+
+        //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
+        MatchAndBuildMap(last_frame_, current_frame_);
+
+        // end stage
         status_ = FrontendStatus::TRACKING_GOOD;
-
         relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
 
         return true;
@@ -127,8 +130,9 @@ namespace ECT_SLAM
         cv::Mat points3F;
         cv::triangulatePoints(P1, P2, points1, points2, pointsH);
         cv::Mat pointsCH = pointsH.reshape(4);
+        std::cout << "----map_points CH----\n" << pointsCH.rows << " " << pointsCH.cols << " " << pointsCH.channels() << " " << pointsCH.type() << std::endl;
         cv::convertPointsFromHomogeneous(pointsCH, points3F);
-        // std::cout << "----map_points----\n" << points3F.rows << " " << points3F.cols << " " << points3F.channels() << " " << points3F.type() << std::endl;
+        std::cout << "----map_points 3F----\n" << points3F.rows << " " << points3F.cols << " " << points3F.channels() << " " << points3F.type() << std::endl;
 
         SE3 pose_Tcw = frame1->Pose().inverse();
         for (int i = 0; i < matches.size(); i++)
@@ -179,19 +183,19 @@ namespace ECT_SLAM
         return true;
     }
 
-    bool Frontend::MatchAndBuildMap()
+    bool Frontend::MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2)
     {
         std::vector<cv::DMatch> matches;
         std::vector<cv::Point2f> points1, points2;
         //!-----------------------Match----------------------------
-        if (!Match2D2D(first_frame_, current_frame_, matches, points1, points2))
+        if (!Match2D2D(frame1, frame2, matches, points1, points2))
             return false;
 
         //!-----------------------Estimate----------------------------
-        EstimateWithMatches(first_frame_, current_frame_, points1, points2);
+        EstimateWithMatches(frame1, frame2, points1, points2);
 
         //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
-        Trangulation(first_frame_, current_frame_, matches, points1, points2);
+        Trangulation(frame1, frame2, matches, points1, points2);
 
         return true;
     }

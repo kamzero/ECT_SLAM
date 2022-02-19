@@ -78,7 +78,7 @@ namespace ECT_SLAM
      * Find Essential Matrix & Recover T\R & Triangulate to Init Map
      * @return true if success
      */
-      bool MatchAndBuildMap();
+      bool MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2);
 
       bool Match2D2D(Frame::Ptr &frame1, Frame::Ptr frame2, std::vector<cv::DMatch> &matches,
                      std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2);
