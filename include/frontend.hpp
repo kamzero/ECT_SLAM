@@ -74,7 +74,7 @@ namespace ECT_SLAM
      */
       bool DetectFeature();
 
-      bool MatchWith3DMap(std::vector<cv::DMatch> &matches, std::vector<cv::Point3f> &points_3d, std::vector<cv::Point2f> points_2d);
+      bool MatchWith3DMap(std::vector<cv::DMatch> &matches, std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d);
 
       bool MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2);
 
