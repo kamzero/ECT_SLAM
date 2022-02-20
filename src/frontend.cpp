@@ -60,13 +60,23 @@ namespace ECT_SLAM
 
     bool Frontend::Track()
     {
-        std::cout << "Tracking No." << current_frame_->id_ << " ...\n";
+        std::cout << "Tracking No." << current_frame_->id_ << " ... ";
 
         DetectFeature();
         // initial guess
         current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
 
-        //!--------------PnP Estimate With 2D-3D Matches(map)-------------------------- 
+        //!--------------PnP Estimate With 2D-3D Matches(map)--------------------------
+        std::vector<cv::DMatch> matches;
+        std::vector<cv::Point2f> points_2d;
+        std::vector<cv::Point3f> points_3d;
+
+        MatchWith3DMap(matches, points_3d, points_2d);
+
+        // std::vector<double> rvec(3), tvec(3);
+        // cv::solvePnP(points_3d, points_2d, camera_->K_cv(), vector<double>(), rvec, tvec);
+        // std::cout << rvec[0] << " " << rvec[1] << " " << rvec[2] << " "
+        //           << tvec[0] << " " << tvec[1] << " " << tvec[2] << std::endl;
 
         //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
         MatchAndUpdateMap(last_frame_, current_frame_);
@@ -84,6 +94,29 @@ namespace ECT_SLAM
         return true;
     }
 
+    bool Frontend::MatchWith3DMap(std::vector<cv::DMatch> &matches,
+                                  std::vector<cv::Point3f> &points_3d, std::vector<cv::Point2f> points_2d)
+    {
+        Map::LandmarksType active_landmarks = map_->GetActiveMapPoints();
+        BfMatch3D(active_landmarks, current_frame_->descriptors_, matches);
+
+        std::cout << "MatchWith3DMap " << matches.size() << std::endl;
+        if (matches.size() < 5)
+            return false;
+        for (auto m : matches)
+        {
+            auto iter = active_landmarks.find(m.queryIdx);
+            auto pt3d = iter->second->Pos();
+            points_3d.emplace_back(pt3d[0], pt3d[1], pt3d[2]);
+            points_2d.emplace_back(current_frame_->features_[m.trainIdx]->position_.pt.x, current_frame_->features_[m.trainIdx]->position_.pt.y);
+
+            // Add Obs
+            iter->second->AddObservation(current_frame_->features_[m.trainIdx]);
+        }
+
+        return true;
+    }
+
     bool Frontend::DetectFeature()
     {
         std::vector<cv::KeyPoint> keypoints;
@@ -92,7 +125,7 @@ namespace ECT_SLAM
 
         for (int i = 0; i < keypoints.size(); i++)
         {
-            Feature::Ptr feature(new Feature(current_frame_, keypoints[i]));
+            Feature::Ptr feature(new Feature(current_frame_, keypoints[i], current_frame_->descriptors_[i]));
             current_frame_->features_.push_back(feature);
         }
 
@@ -210,6 +243,53 @@ namespace ECT_SLAM
         //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
         Trangulation(frame1, frame2, matches, points1, points2);
         return true;
+    }
+
+    // brute-force matching
+    void BfMatch3D(const Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches)
+    {
+        const int d_max = 40;
+        for (auto iter = landmarks.begin(); iter != landmarks.end(); iter++)
+        {
+            auto i1 = iter->first;
+            std::list<std::weak_ptr<Feature>> obs = iter->second->GetObs();
+
+            if (obs.empty())
+                continue;
+            bool flag = false;
+            cv::DMatch m{i1, 0, 256};
+
+            for (auto ob : obs)
+            {
+                auto lock = ob.lock();
+                if (lock)
+                    flag = true;
+                else
+                    continue;
+
+                for (size_t i2 = 0; i2 < desc.size(); ++i2)
+                {
+                    if (desc[i2].empty())
+                        continue;
+
+                    int distance = 0;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        distance += _mm_popcnt_u32(lock->descriptor_[k] ^ desc[i2][k]);
+                    }
+                    if (distance < d_max && distance < m.distance)
+                    {
+                        m.distance = distance;
+                        m.trainIdx = i2;
+                    }
+                }
+            }
+
+            if (flag && m.distance < d_max)
+            {
+                matches.push_back(m);
+            }
+        }
     }
 
 } // namespace ECT_SLAM

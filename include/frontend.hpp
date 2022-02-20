@@ -74,10 +74,8 @@ namespace ECT_SLAM
      */
       bool DetectFeature();
 
-      /**
-     * Find Essential Matrix & Recover T\R & Triangulate to Init Map
-     * @return true if success
-     */
+      bool MatchWith3DMap(std::vector<cv::DMatch> &matches, std::vector<cv::Point3f> &points_3d, std::vector<cv::Point2f> points_2d);
+
       bool MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2);
 
       bool MatchAndUpdateMap(Frame::Ptr frame1, Frame::Ptr frame2);
@@ -119,5 +117,7 @@ namespace ECT_SLAM
       // utilities
       cv::Ptr<cv::ORB> orb_; // feature detector in opencv
    };
+
+   void BfMatch3D(const ECT_SLAM::Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches);
 
 } // namespace ECT_SLAM
