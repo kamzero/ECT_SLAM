@@ -70,23 +70,23 @@ namespace ECT_SLAM
         std::vector<cv::DMatch> matches;
         std::vector<cv::Point2d> points_2d;
         std::vector<cv::Point3d> points_3d;
-        
+
         //! TODO: deal with failure
-        if(!MatchWith3DMap(matches, points_3d, points_2d))
-            return false; 
+        if (!MatchWith3DMap(matches, points_3d, points_2d))
+            return false;
 
         auto pose = current_frame_->Pose();
         auto se3 = pose.log();
-        std::vector<double> rvec{se3(3,0), se3(4,0), se3(5,0)};
-        std::vector<double> tvec{se3(0,0), se3(1,0), se3(2,0)};
+        std::vector<double> rvec{se3(3, 0), se3(4, 0), se3(5, 0)};
+        std::vector<double> tvec{se3(0, 0), se3(1, 0), se3(2, 0)};
 
         cv::solvePnP(points_3d, points_2d, camera_->K_cv(), cv::Mat(), rvec, tvec, true, cv::SOLVEPNP_ITERATIVE);
         Vec6 new_se3;
-        new_se3 << tvec[0], tvec[1], tvec[2] ,rvec[0], rvec[1], rvec[2];
+        new_se3 << tvec[0], tvec[1], tvec[2], rvec[0], rvec[1], rvec[2];
         current_frame_->SetPose(SE3::exp(new_se3));
 
-        // std::cout << "  =POSE= " << rvec[0] << " " << rvec[1] << " " << rvec[2] << " "
-        //           << tvec[0] << " " << tvec[1] << " " << tvec[2] << std::endl;
+        std::cout << "  =POSE= " << rvec[0] << " " << rvec[1] << " " << rvec[2] << " "
+                  << tvec[0] << " " << tvec[1] << " " << tvec[2] << std::endl;
 
         //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
         MatchAndUpdateMap(last_frame_, current_frame_);
@@ -105,7 +105,7 @@ namespace ECT_SLAM
     }
 
     bool Frontend::MatchWith3DMap(std::vector<cv::DMatch> &matches,
-                                  std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d>& points_2d)
+                                  std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d)
     {
         Map::LandmarksType active_landmarks = map_->GetActiveMapPoints();
         BfMatch3D(active_landmarks, current_frame_->descriptors_, matches);
@@ -240,6 +240,12 @@ namespace ECT_SLAM
         //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
         Trangulation(frame1, frame2, matches, points1, points2);
 
+        //!-----------------------Insert KeyFrame---------------------
+        first_frame_->SetKeyFrame();
+        current_frame_->SetKeyFrame();
+        map_->InsertKeyFrame(first_frame_);
+        map_->InsertKeyFrame(current_frame_);
+
         return true;
     }
 
@@ -250,8 +256,30 @@ namespace ECT_SLAM
         //!-----------------------Match----------------------------
         if (!Match2D2D(frame1, frame2, matches, points1, points2))
             return false;
+
+        if (matches.size() < num_features_needed_for_keyframe_)
+        {
+            current_frame_->SetKeyFrame();
+            map_->InsertKeyFrame(current_frame_);
+            backend_->UpdateMap();
+        }
+        //!-----------------------Delete Matches of MapPoints---------------
+        int i = 0;
+        std::vector<cv::DMatch> new_matches;
+        std::vector<cv::Point2f> new_points1, new_points2;
+        for (auto iter = matches.begin(); iter != matches.end(); i++)
+        {
+            if (!frame1->features_[iter->queryIdx]->map_point_.lock())
+            {
+                new_matches.push_back(matches[i]);
+                new_points1.push_back(points1[i]);
+                new_points2.push_back(points2[i]);
+            }
+            ++iter;
+        }
         //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
-        Trangulation(frame1, frame2, matches, points1, points2);
+        Trangulation(frame1, frame2, new_matches, new_points1, new_points2);
+
         return true;
     }
 

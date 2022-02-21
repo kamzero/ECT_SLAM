@@ -36,7 +36,7 @@ void Backend::BackendLoop() {
 
 void Backend::Optimize(Map::KeyframesType &keyframes,
                        Map::LandmarksType &landmarks) {
-    
+    std::cout << "######BackEnd###### Optimizing "<< std::endl;
 }
 
 }  // namespace ECT_SLAM
