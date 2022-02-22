@@ -116,7 +116,7 @@ typedef Sophus::SO3d SO3;
 
 using cv::Mat;
 
-// // glog
-// #include <glog/logging.h>
+// glog
+#include <glog/logging.h>
 
 #endif  // ECT_SLAM_COMMON_INCLUDE_H

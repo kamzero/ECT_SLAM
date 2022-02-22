@@ -26,6 +26,13 @@ class Camera {
     }
 
     // return intrinsic matrix
+    Mat33 K_d() const {
+        Mat33 k;
+        k << fx_, 0, cx_, 0, fy_, cy_, 0, 0, 1;
+        return k;
+    }
+
+    // return intrinsic matrix
     cv::Mat K_cv() const {
         return (cv::Mat1d(3, 3) << fx_, 0, cx_, 0, fy_, cy_, 0, 0, 1);
     }
