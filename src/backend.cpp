@@ -86,6 +86,11 @@ void Backend::Optimize(Map::KeyframesType &keyframes,
             if (feat->is_outlier_ || feat->frame_.lock() == nullptr) continue;
 
             auto frame = feat->frame_.lock();
+            // 如果keyframe已经被删除，跳过
+            if(vertices.find(frame->keyframe_id_) == vertices.end())
+            if(vertices.find(frame->keyframe_id_) == vertices.end())
+            if(vertices.find(frame->keyframe_id_) == vertices.end())
+                continue;
             EdgeProjection *edge = nullptr;
 
             edge = new EdgeProjection(K, ext);
@@ -158,9 +163,13 @@ void Backend::Optimize(Map::KeyframesType &keyframes,
 
     // Set pose and lanrmark position
     for (auto &v : vertices) {
+        if(keyframes.find(v.first) == keyframes.end())
+            continue;
         keyframes.at(v.first)->SetPose(v.second->estimate());
     }
     for (auto &v : vertices_landmarks) {
+        if(landmarks.find(v.first) == landmarks.end())
+            continue;
         landmarks.at(v.first)->SetPos(v.second->estimate());
     }
 }
