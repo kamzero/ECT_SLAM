@@ -1,10 +1,4 @@
-//
-// Created by gaoxiang on 19-5-4.
-//
-
-#ifndef MYSLAM_G2O_TYPES_H
-#define MYSLAM_G2O_TYPES_H
-
+#pragma once
 #include "common_include.hpp"
 
 #include <g2o/core/base_binary_edge.h>
@@ -151,6 +145,5 @@ class EdgeProjection
     SE3 _cam_ext;
 };
 
-}  // namespace myslam
+}  // namespace ECT_SLAM
 
-#endif  // MYSLAM_G2O_TYPES_H

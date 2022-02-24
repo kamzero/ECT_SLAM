@@ -122,6 +122,7 @@ namespace ECT_SLAM
 
             // Add Obs
             iter->second->AddObservation(current_frame_->features_[m.trainIdx]);
+            current_frame_->features_[m.trainIdx]->map_point_ = iter->second;
         }
 
         return true;
@@ -257,7 +258,8 @@ namespace ECT_SLAM
         if (!Match2D2D(frame1, frame2, matches, points1, points2))
             return false;
 
-        if (matches.size() < num_features_needed_for_keyframe_)
+        double ratio = (double)matches.size() / (double)frame2->features_.size();
+        if (ratio < ratio_for_keyframe_)
         {
             current_frame_->SetKeyFrame();
             map_->InsertKeyFrame(current_frame_);
