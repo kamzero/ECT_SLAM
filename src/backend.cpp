@@ -88,8 +88,6 @@ void Backend::Optimize(Map::KeyframesType &keyframes,
             auto frame = feat->frame_.lock();
             // 如果keyframe已经被删除，跳过
             if(vertices.find(frame->keyframe_id_) == vertices.end())
-            if(vertices.find(frame->keyframe_id_) == vertices.end())
-            if(vertices.find(frame->keyframe_id_) == vertices.end())
                 continue;
             EdgeProjection *edge = nullptr;
 
@@ -152,7 +150,10 @@ void Backend::Optimize(Map::KeyframesType &keyframes,
         if (ef.first->chi2() > chi2_th) {
             ef.second->is_outlier_ = true;
             // remove the observation
-            ef.second->map_point_.lock()->RemoveObservation(ef.second);
+            if(auto lock = ef.second->map_point_.lock())
+                lock->RemoveObservation(ef.second);
+            else
+                std::cout << "*";
         } else {
             ef.second->is_outlier_ = false;
         }
@@ -167,6 +168,7 @@ void Backend::Optimize(Map::KeyframesType &keyframes,
             continue;
         keyframes.at(v.first)->SetPose(v.second->estimate());
     }
+
     for (auto &v : vertices_landmarks) {
         if(landmarks.find(v.first) == landmarks.end())
             continue;
