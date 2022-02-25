@@ -36,7 +36,7 @@ namespace ECT_SLAM
         map_ = Map::Ptr(new Map);
         viewer_ = Viewer::Ptr(new Viewer);
         camera_ = Camera::Ptr(new Camera(Config::Get<double>("camera.fx"), Config::Get<double>("camera.fy"),
-                                      Config::Get<double>("camera.cx"), Config::Get<double>("camera.cy")));
+                                         Config::Get<double>("camera.cx"), Config::Get<double>("camera.cy")));
 
         frontend_->SetBackend(backend_);
         frontend_->SetMap(map_);
@@ -68,8 +68,33 @@ namespace ECT_SLAM
 
     void System::SaveKeyFrameTrajectory(const std::string &filename)
     {
-        std::cout << std::endl
-                  << "Saving keyframe trajectory to " << filename << " ..." << std::endl;
+        std::cout << "\nSaving keyframe trajectory to " << filename << " ..." << std::endl;
+
+        Map::KeyframesType keyframes = map_->GetAllKeyFrames();
+
+        ofstream f;
+        f.open(filename.c_str());
+        f << std::fixed;
+
+        for (auto kf : keyframes)
+        {
+            double time = kf.second->time_stamp_;
+            SE3 pose = kf.second->Pose();
+            auto se3 = pose.log();
+            std::vector<double> rvec{se3(3, 0), se3(4, 0), se3(5, 0)};
+            std::vector<double> tvec{se3(0, 0), se3(1, 0), se3(2, 0)};
+
+            Eigen::Quaterniond qt;
+            qt = Eigen::AngleAxisd(rvec[0], Eigen::Vector3d::UnitZ()) *
+                 Eigen::AngleAxisd(rvec[1], Eigen::Vector3d::UnitY()) *
+                 Eigen::AngleAxisd(rvec[2], Eigen::Vector3d::UnitX());
+
+            f << time << " " << tvec[0] << " " << tvec[1] << " " << tvec[2] << " "
+                      << qt.x() << " " << qt.y() << " " << qt.z() << " " << qt.w() << "\n";
+        }
+
+        f.close();
+        std::cout << "trajectory file close..." << std::endl;
     }
 
 } //namespace ECT_SLAM

@@ -43,7 +43,7 @@ public:
     // This function must be called before saving the trajectory.
     void Shutdown();
 
-    // Save keyframe poses in the TUM RGB-D dataset format.
+    // Save keyframe poses in the TUM dataset format.
     // This method works for all sensor input.
     // Call first Shutdown()
     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
