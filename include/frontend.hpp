@@ -112,7 +112,7 @@ namespace ECT_SLAM
       int num_features_init_ = 100;
       int num_features_tracking_ = 50;
       int num_features_tracking_bad_ = 20;
-      double ratio_for_keyframe_ = 0.40;
+      double ratio_for_keyframe_ = 0.35;
 
       // utilities
       cv::Ptr<cv::ORB> orb_; // feature detector in opencv

@@ -17,6 +17,7 @@ namespace ECT_SLAM
         orb_ = cv::ORB::create();
         num_features_init_ = Config::Get<int>("num_features_init");
         num_features_ = Config::Get<int>("num_features");
+        ratio_for_keyframe_ = Config::Get<double>("ratio_for_keyframe");
     }
 
     bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame)
@@ -110,7 +111,7 @@ namespace ECT_SLAM
         Map::LandmarksType active_landmarks = map_->GetActiveMapPoints();
         BfMatch3D(active_landmarks, current_frame_->descriptors_, matches);
 
-        std::cout << "MatchWith3DMap " << matches.size() << std::endl;
+        std::cout << "MatchWith3DMap " << matches.size() << " / " << active_landmarks.size() << std::endl;
         if (matches.size() < 5)
             return false;
         for (auto m : matches)
