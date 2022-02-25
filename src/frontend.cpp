@@ -85,7 +85,7 @@ namespace ECT_SLAM
         new_se3 << tvec[0], tvec[1], tvec[2], rvec[0], rvec[1], rvec[2];
         current_frame_->SetPose(SE3::exp(new_se3));
 
-        std::cout << "  =POSE= " << rvec[0] << " " << rvec[1] << " " << rvec[2] << " "
+        std::cout << "=POSE= " << rvec[0] << " " << rvec[1] << " " << rvec[2] << " "
                   << tvec[0] << " " << tvec[1] << " " << tvec[2] << std::endl;
 
         //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
@@ -192,8 +192,7 @@ namespace ECT_SLAM
             pworld = pose_Tcw * pworld;
             new_map_point->SetPos(pworld);
             new_map_point->AddObservation(frame1->features_[matches[i].queryIdx]);
-            new_map_point->AddObservation(
-                frame2->features_[matches[i].trainIdx]);
+            new_map_point->AddObservation(frame2->features_[matches[i].trainIdx]);
 
             frame1->features_[matches[i].queryIdx]->map_point_ = new_map_point;
             frame2->features_[matches[i].trainIdx]->map_point_ = new_map_point;
@@ -260,13 +259,6 @@ namespace ECT_SLAM
         if (!Match2D2D(frame1, frame2, matches, points1, points2))
             return false;
 
-        double ratio = (double)matches.size() / (double)frame2->features_.size();
-        if (ratio < ratio_for_keyframe_)
-        {
-            current_frame_->SetKeyFrame();
-            map_->InsertKeyFrame(current_frame_);
-            backend_->UpdateMap();
-        }
         //!-----------------------Delete Matches of MapPoints---------------
         int i = 0;
         std::vector<cv::DMatch> new_matches;
@@ -284,6 +276,13 @@ namespace ECT_SLAM
         //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
         Trangulation(frame1, frame2, new_matches, new_points1, new_points2);
 
+        double ratio = (double)matches.size() / (double)frame2->features_.size();
+        if (ratio < ratio_for_keyframe_)
+        {
+            current_frame_->SetKeyFrame();
+            map_->InsertKeyFrame(current_frame_);
+            backend_->UpdateMap();
+        }
         return true;
     }
 

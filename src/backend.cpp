@@ -41,8 +41,7 @@ namespace ECT_SLAM
         }
     }
 
-    void Backend::Optimize(Map::KeyframesType &keyframes_,
-                           Map::LandmarksType &landmarks)
+    void Backend::Optimize(Map::KeyframesType &keyframes_, Map::LandmarksType &landmarks)
     {
         auto it = keyframes_.begin();
         if(keyframes_.size()>20)
@@ -174,8 +173,7 @@ namespace ECT_SLAM
             }
         }
 
-        LOG(INFO) << "Outlier/Inlier in optimization: " << cnt_outlier << "/"
-                  << cnt_inlier;
+        LOG(INFO) << "Outlier/Inlier in optimization: " << cnt_outlier << "/"<< cnt_inlier;
 
         //-----------------Set pose and lanrmark position-----------------
         auto iter = keyframes.begin();
@@ -188,13 +186,13 @@ namespace ECT_SLAM
         int cnt = 0;
         for (auto &v : vertices_landmarks)
         {
-            auto iit = landmarks.end();
             if (landmarks.find(v.first) == landmarks.end()){
                 cnt++;
             }
             else
                 landmarks.at(v.first)->SetPos(v.second->estimate());
         }
+        if(cnt)
         std::cout << vertices_landmarks.size()<< "-vertex " << landmarks.size() << "-landmarks !!!! - not find " << cnt << "\n";
     }
 
