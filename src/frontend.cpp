@@ -162,6 +162,8 @@ namespace ECT_SLAM
                                 std::vector<cv::DMatch> &matches,
                                 std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2)
     {
+        if(matches.size()==0) return true;
+
         cv::Mat P1, P2;
         Mat34f P1_e = camera_->K() * frame1->RT();
         Mat34f P2_e = camera_->K() * frame2->RT();
@@ -173,8 +175,8 @@ namespace ECT_SLAM
 
         cv::Mat pointsH(1, matches.size(), CV_32FC4);
         cv::Mat points3F;
+
         cv::triangulatePoints(P1, P2, points1, points2, pointsH);
-        // std::cout << points1.size() << std::endl;
         cv::convertPointsFromHomogeneous(pointsH.t(), points3F);
         // std::cout << "----map_points 3F----\n" << points3F.rows << " " << points3F.cols << " " << points3F.channels() << " " << points3F.type() << std::endl;
 
