@@ -183,17 +183,10 @@ namespace ECT_SLAM
             iter++;
         }
 
-        int cnt = 0;
         for (auto &v : vertices_landmarks)
         {
-            if (landmarks.find(v.first) == landmarks.end()){
-                cnt++;
-            }
-            else
-                landmarks.at(v.first)->SetPos(v.second->estimate());
+            landmarks.at(v.first)->SetPos(v.second->estimate());
         }
-        if(cnt)
-        std::cout << vertices_landmarks.size()<< "-vertex " << landmarks.size() << "-landmarks !!!! - not find " << cnt << "\n";
     }
 
 } // namespace ECT_SLAM
