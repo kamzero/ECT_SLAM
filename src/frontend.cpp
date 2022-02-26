@@ -53,7 +53,14 @@ namespace ECT_SLAM
         if (current_frame_->id_ >= 5)
         {
             if (MatchAndBuildMap(first_frame_, current_frame_))
+            {
                 status_ = FrontendStatus::TRACKING_GOOD;
+                if (viewer_)
+                {
+                    viewer_->AddCurrentFrame(current_frame_);
+                    viewer_->UpdateMap();
+                }
+            }
         }
 
         return true;
@@ -95,6 +102,8 @@ namespace ECT_SLAM
         // end stage
         status_ = FrontendStatus::TRACKING_GOOD;
         relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
+        if (viewer_)
+            viewer_->AddCurrentFrame(current_frame_);
 
         return true;
     }
@@ -163,7 +172,8 @@ namespace ECT_SLAM
                                 std::vector<cv::DMatch> &matches,
                                 std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2)
     {
-        if(matches.size()==0) return true;
+        if (matches.size() == 0)
+            return true;
 
         cv::Mat P1, P2;
         Mat34f P1_e = camera_->K() * frame1->RT();
@@ -283,6 +293,8 @@ namespace ECT_SLAM
             current_frame_->SetKeyFrame();
             map_->InsertKeyFrame(current_frame_);
             backend_->UpdateMap();
+            if (viewer_)
+                viewer_->UpdateMap();
         }
         return true;
     }
