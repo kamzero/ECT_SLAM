@@ -78,14 +78,18 @@ namespace ECT_SLAM
     cv::Mat Viewer::PlotFrameImage()
     {
         cv::Mat img_out;
-        cv::cvtColor(current_frame_->img_, img_out, CV_GRAY2BGR);
-        for (size_t i = 0; i < current_frame_->features_.size(); ++i)
+        auto cf = current_frame_;
+        cv::cvtColor(cf->img_, img_out, CV_GRAY2BGR);
+        for (size_t i = 0; i < cf->features_.size(); ++i)
         {
-            if (current_frame_->features_[i]->map_point_.lock())
+            if (cf->features_[i]->map_point_.lock())
             {
-                auto feat = current_frame_->features_[i];
-                cv::circle(img_out, feat->position_.pt, 2, cv::Scalar(0, 250, 0),
-                           2);
+                auto feat = cf->features_[i];
+                cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(0, 250, 0),2);
+            }
+            else{
+                auto feat = cf->features_[i];
+                cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(0, 0, 250),2);
             }
         }
         return img_out;

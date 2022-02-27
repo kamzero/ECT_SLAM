@@ -72,7 +72,8 @@ namespace ECT_SLAM
 
         DetectFeature();
         // initial guess
-        current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
+        current_frame_->SetPose(last_frame_->Pose());
+        // current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
 
         //!--------------PnP Estimate With 2D-3D Matches(map)--------------------------
         std::vector<cv::DMatch> matches;
@@ -101,7 +102,7 @@ namespace ECT_SLAM
 
         // end stage
         status_ = FrontendStatus::TRACKING_GOOD;
-        relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
+        // relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
         if (viewer_)
             viewer_->AddCurrentFrame(current_frame_);
 
@@ -194,8 +195,7 @@ namespace ECT_SLAM
         SE3 pose_Tcw = frame1->Pose().inverse();
         for (int i = 0; i < matches.size(); i++)
         {
-            if (points3F.at<cv::Vec3f>(i, 0)[2] <= 0)
-                continue;
+            // if (points3F.at<cv::Vec3f>(i, 0)[2] <= 0) continue;
 
             Vec3 pworld = Vec3(points3F.at<cv::Vec3f>(i, 0)[0], points3F.at<cv::Vec3f>(i, 0)[1], points3F.at<cv::Vec3f>(i, 0)[2]);
 
