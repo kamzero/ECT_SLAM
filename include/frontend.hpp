@@ -81,7 +81,7 @@ namespace ECT_SLAM
       bool MatchAndUpdateMap(Frame::Ptr frame1, Frame::Ptr frame2);
 
       bool Match2D2D(Frame::Ptr &frame1, Frame::Ptr frame2, std::vector<cv::DMatch> &matches,
-                     std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2);
+                     std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2, int thres);
 
       bool Trangulation(Frame::Ptr &frame1, Frame::Ptr frame2,
                         std::vector<cv::DMatch> &matches,

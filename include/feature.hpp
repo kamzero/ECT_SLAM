@@ -10,6 +10,12 @@ namespace ECT_SLAM
 
     struct Frame;
     struct MapPoint;
+    
+    enum STATUS{
+        NONMATCH=0,
+        MATCH3D=1,
+        MATCH2D=2
+    };
 
     /**
  * 2D 特征点
@@ -27,6 +33,7 @@ namespace ECT_SLAM
         DescType descriptor_;
 
         bool is_outlier_ = false; // 是否为异常点
+        STATUS status_ = STATUS::NONMATCH;
 
         //! TODO: timestamp
 

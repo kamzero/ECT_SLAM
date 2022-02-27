@@ -19,7 +19,7 @@ namespace ECT_SLAM
         std::unique_lock<std::mutex> lck(viewer_data_mutex_);
         current_frame_ = current_frame;
     }
-    
+
     void Viewer::ThreadLoop()
     {
         pangolin::CreateWindowAndBind("ECT_SLAM", 1024, 768);
@@ -80,18 +80,31 @@ namespace ECT_SLAM
         cv::Mat img_out;
         auto cf = current_frame_;
         cv::cvtColor(cf->img_, img_out, CV_GRAY2BGR);
+
+        int cnt = 0;
         for (size_t i = 0; i < cf->features_.size(); ++i)
         {
-            if (cf->features_[i]->map_point_.lock())
+            auto feat = cf->features_[i];
+            if (cf->features_[i]->status_ == STATUS::MATCH3D)
             {
-                auto feat = cf->features_[i];
-                cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(0, 250, 0),2);
+                cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(0, 250, 0), 2);
             }
-            else{
-                auto feat = cf->features_[i];
-                cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(0, 0, 250),2);
+            else 
+            {
+                cnt++;
+                if(cf->features_[i]->status_ == STATUS::MATCH2D)
+                    cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(0, 0, 250), 2);
+                else
+                    cv::circle(img_out, feat->position_.pt, 1, cv::Scalar(250, 100, 250), 2);
             }
         }
+
+        int size =  cf->features_.size();
+        cv::String text = "features: " + std::to_string(size-cnt) + " / " + std::to_string(size);
+        cv::putText(img_out, text,
+                    cv::Point(30, 30), cv::FONT_HERSHEY_DUPLEX,
+                    1.0, CV_RGB(250, 250, 200), 1);
+
         return img_out;
     }
 

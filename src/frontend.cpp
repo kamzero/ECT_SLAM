@@ -133,6 +133,7 @@ namespace ECT_SLAM
 
             // Add Obs
             iter->second->AddObservation(current_frame_->features_[m.trainIdx]);
+            current_frame_->features_[m.trainIdx]->status_ = STATUS::MATCH3D;
             current_frame_->features_[m.trainIdx]->map_point_ = iter->second;
         }
 
@@ -156,10 +157,10 @@ namespace ECT_SLAM
 
     bool Frontend::Match2D2D(Frame::Ptr &frame1, Frame::Ptr frame2,
                              std::vector<cv::DMatch> &matches,
-                             std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2)
+                             std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2, int thres = 8)
     {
         BfMatch(frame1->descriptors_, frame2->descriptors_, matches);
-        if (matches.size() < 8)
+        if (matches.size() < thres)
             return false;
         for (auto m : matches)
         {
@@ -207,8 +208,11 @@ namespace ECT_SLAM
 
             frame1->features_[matches[i].queryIdx]->map_point_ = new_map_point;
             frame2->features_[matches[i].trainIdx]->map_point_ = new_map_point;
+            frame2->features_[matches[i].trainIdx]->status_ = STATUS::MATCH2D;
+
             map_->InsertMapPoint(new_map_point);
         }
+        std::cout << "Trangulation " << matches.size() << " new mappoints\n";
         return true;
     }
 
@@ -267,7 +271,7 @@ namespace ECT_SLAM
         std::vector<cv::DMatch> matches;
         std::vector<cv::Point2f> points1, points2;
         //!-----------------------Match----------------------------
-        if (!Match2D2D(frame1, frame2, matches, points1, points2))
+        if (!Match2D2D(frame1, frame2, matches, points1, points2, 3))
             return false;
 
         //!-----------------------Delete Matches of MapPoints---------------
@@ -346,4 +350,59 @@ namespace ECT_SLAM
         }
     }
 
+    // void BfMatch3D(const Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches)
+    // {
+    //     const int d_max = 40;
+    //     // space for time
+    //     std::vector<std::list<std::weak_ptr<Feature>>> landmark_list;
+    //     std::vector<unsigned long> landmark_id;
+    //     for (auto iter = landmarks.begin(); iter != landmarks.end(); iter++)
+    //     {
+    //         landmark_list.push_back(iter->second->GetObs());
+    //         landmark_id.push_back(iter->first);
+    //     }
+
+    //     for (size_t i2 = 0; i2 < desc.size(); ++i2)
+    //     {
+    //         if (desc[i2].empty())
+    //             continue;
+    //         cv::DMatch m{0, i2, 256};
+
+    //         auto it = landmark_id.begin();
+    //         for (auto iter = landmark_list.begin(); iter != landmark_list.end(); it++, iter++)
+    //         {
+    //             auto i1 = *it;
+    //             std::list<std::weak_ptr<Feature>> obs = *iter;
+
+    //             if (obs.empty())
+    //                 continue;
+    //             bool flag = false;
+
+    //             for (auto ob : obs)
+    //             {
+    //                 auto lock = ob.lock();
+    //                 if (lock)
+    //                     flag = true;
+    //                 else
+    //                     continue;
+
+    //                 int distance = 0;
+    //                 for (int k = 0; k < 8; k++)
+    //                 {
+    //                     distance += _mm_popcnt_u32(lock->descriptor_[k] ^ desc[i2][k]);
+    //                 }
+    //                 if (distance < d_max && distance < m.distance)
+    //                 {
+    //                     m.distance = distance;
+    //                     m.queryIdx = i1;
+    //                 }
+    //             }
+
+    //             if (flag && m.distance < d_max)
+    //             {
+    //                 matches.push_back(m);
+    //             }
+    //         }
+    //     }
+    // }
 } // namespace ECT_SLAM

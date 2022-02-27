@@ -58,7 +58,7 @@ void Map::RemoveOldKeyframe() {
         frame_to_remove = keyframes_.at(max_kf_id);
     }
 
-    std::cout << "remove keyframe " << frame_to_remove->keyframe_id_ << std::endl;
+    // std::cout << "remove keyframe " << frame_to_remove->keyframe_id_ << std::endl;
     // remove keyframe and landmark observation
     active_keyframes_.erase(frame_to_remove->keyframe_id_);
     for (auto feat : frame_to_remove->features_) {
@@ -82,7 +82,7 @@ void Map::CleanMap() {
             ++iter;
         }
     }
-    std::cout << "Removed " << cnt_landmark_removed << " active landmarks \n";
+    // std::cout << "Removed " << cnt_landmark_removed << " active landmarks \n";
 }
 
 }  // namespace ECT_SLAM
