@@ -306,6 +306,7 @@ namespace ECT_SLAM
     // brute-force matching
     void BfMatch3D(const Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches)
     {
+        std::vector<int> frame_dist(desc.size());
         const int d_max = 40;
         for (auto iter = landmarks.begin(); iter != landmarks.end(); iter++)
         {
@@ -343,9 +344,10 @@ namespace ECT_SLAM
                 }
             }
 
-            if (flag && m.distance < d_max)
+            if (flag && m.distance < d_max && ((frame_dist[m.trainIdx] == 0) || (m.distance < frame_dist[m.trainIdx])))
             {
                 matches.push_back(m);
+                frame_dist[m.trainIdx] = m.distance;
             }
         }
     }
