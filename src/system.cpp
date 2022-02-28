@@ -46,7 +46,8 @@ namespace ECT_SLAM
         backend_->SetMap(map_);
         backend_->SetCameras(camera_);
 
-        viewer_->SetMap(map_);
+        if(viewer_)
+            viewer_->SetMap(map_);
 
         return true;
     }
@@ -63,7 +64,8 @@ namespace ECT_SLAM
     void System::Shutdown()
     {
         backend_->Stop();
-        viewer_->Close();
+        if(viewer_)
+            viewer_->Close();
     }
 
     void System::SaveKeyFrameTrajectory(const std::string &filename)

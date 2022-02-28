@@ -68,17 +68,18 @@ namespace ECT_SLAM
      */
       bool Reset();
 
-      /**
-     * Detect Feature & Calculate ORB Descriptors
-     * @return true if success
-     */
+      bool TrackLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
+                         std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                         std::vector<cv::DMatch> &matches);
+
+      bool InsertKeyFrame(std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                          std::vector<cv::DMatch> &matches);
+
+      bool EstimatePnP(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d);
+
       bool DetectFeature();
 
-      bool MatchWith3DMap(std::vector<cv::DMatch> &matches, std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d);
-
       bool MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2);
-
-      bool MatchAndUpdateMap(Frame::Ptr frame1, Frame::Ptr frame2);
 
       bool Match2D2D(Frame::Ptr &frame1, Frame::Ptr frame2, std::vector<cv::DMatch> &matches,
                      std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2, int thres);
@@ -112,6 +113,7 @@ namespace ECT_SLAM
       int num_features_init_ = 100;
       int num_features_tracking_ = 50;
       int num_features_tracking_bad_ = 20;
+      int num_for_keyframe_ = 100;
       double ratio_for_keyframe_ = 0.35;
 
       // utilities

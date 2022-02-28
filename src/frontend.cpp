@@ -17,6 +17,7 @@ namespace ECT_SLAM
         orb_ = cv::ORB::create();
         num_features_init_ = Config::Get<int>("num_features_init");
         num_features_ = Config::Get<int>("num_features");
+        num_for_keyframe_ = Config::Get<int>("num_for_keyframe");
         ratio_for_keyframe_ = Config::Get<double>("ratio_for_keyframe");
     }
 
@@ -66,24 +67,92 @@ namespace ECT_SLAM
         return true;
     }
 
-    bool Frontend::Track()
+    bool Frontend::TrackLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
+                                  std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                                  std::vector<cv::DMatch> &matches)
+
     {
-        std::cout << "Tracking No." << current_frame_->id_ << " ... ";
+        // use LK flow to estimate points in the right image
+        std::vector<cv::Point2f> kps_last, kps_current;
+        for (auto &kp : last_frame_->features_)
+        {
+            if (kp->map_point_.lock())
+            {
+                // use project point
+                auto mp = kp->map_point_.lock();
+                auto px =
+                    camera_->world2pixel(mp->pos_, current_frame_->Pose());
+                kps_last.push_back(kp->position_.pt);
+                kps_current.push_back(cv::Point2f(px[0], px[1]));
+            }
+            else
+            {
+                kps_last.push_back(kp->position_.pt);
+                kps_current.push_back(kp->position_.pt);
+            }
+        }
 
-        DetectFeature();
-        // initial guess
-        current_frame_->SetPose(last_frame_->Pose());
-        // current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
+        std::vector<uchar> status;
+        cv::Mat error;
+        cv::calcOpticalFlowPyrLK(
+            last_frame_->img_, current_frame_->img_, kps_last,
+            kps_current, status, error, cv::Size(11, 11), 3,
+            cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30,
+                             0.01),
+            cv::OPTFLOW_USE_INITIAL_FLOW);
 
-        //!--------------PnP Estimate With 2D-3D Matches(map)--------------------------
-        std::vector<cv::DMatch> matches;
-        std::vector<cv::Point2d> points_2d;
-        std::vector<cv::Point3d> points_3d;
+        int num_good_pts = 0;
+        int k = 0; // count feature in current_frame_
+        for (size_t i = 0; i < status.size(); ++i)
+        {
+            if (status[i])
+            {
+                cv::KeyPoint kp(kps_current[i], 7);
+                Feature::Ptr feature(new Feature(current_frame_, kp));
+                feature->map_point_ = last_frame_->features_[i]->map_point_;
+                current_frame_->features_.push_back(feature);
 
-        //! TODO: deal with failure
-        if (!MatchWith3DMap(matches, points_3d, points_2d))
+                if (auto mp = feature->map_point_.lock())
+                {
+                    num_good_pts++;
+                    auto pt3d = mp->Pos();
+                    points_3d.emplace_back(pt3d[0], pt3d[1], pt3d[2]);
+                    points_2d.push_back(kps_current[i]);
+
+                    // Add Obs
+                    mp->AddObservation(feature);
+                    feature->status_ = STATUS::MATCH3D;
+                }
+                else
+                {
+                    last_to_be_tri.push_back(kps_last[i]);
+                    current_to_be_tri.push_back(kps_current[i]);
+                    matches.push_back(cv::DMatch{i, k, 0});
+
+                    feature->status_ = STATUS::MATCH2D;
+                }
+                k++;
+            }
+        }
+
+        LOG(INFO) << kps_last.size() << " features in total.";
+        LOG(INFO) << "Find " << num_good_pts << " in the last image. ";
+        LOG(INFO) << last_to_be_tri.size() << " features to be triangulate.";
+
+        double ratio = (double)num_good_pts / (double)(kps_last.size());
+        LOG(INFO) << "ratio " << ratio << " ? " << ratio_for_keyframe_;
+
+        if (ratio < ratio_for_keyframe_)
+            return true;
+        if (num_good_pts < num_for_keyframe_)
+            return true;
+        return false;
+    }
+
+    bool Frontend::EstimatePnP(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d)
+    {
+        if (points_3d.size() < 5)
             return false;
-
         auto pose = current_frame_->Pose();
         auto se3 = pose.log();
         std::vector<double> rvec{se3(3, 0), se3(4, 0), se3(5, 0)};
@@ -96,47 +165,63 @@ namespace ECT_SLAM
 
         std::cout << "=POSE= " << rvec[0] << " " << rvec[1] << " " << rvec[2] << " "
                   << tvec[0] << " " << tvec[1] << " " << tvec[2] << std::endl;
+        return true;
+    }
 
-        //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
-        MatchAndUpdateMap(last_frame_, current_frame_);
+    bool Frontend::Track()
+    {
+        std::cout << "Tracking No." << current_frame_->id_ << " ... ";
+
+        // initial guess
+        current_frame_->SetPose(last_frame_->Pose());
+        current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
+
+        //!--------------PnP Estimate With 2D-3D Matches(map)--------------------------
+        std::vector<cv::DMatch> matches;
+        std::vector<cv::Point2d> points_2d;
+        std::vector<cv::Point3d> points_3d;
+        std::vector<cv::Point2f> last_to_be_tri;
+        std::vector<cv::Point2f> current_to_be_tri;
+
+        bool is_keyframe;
+        is_keyframe = TrackLastFrame(points_3d, points_2d, last_to_be_tri, current_to_be_tri, matches);
+
+        if (!EstimatePnP(points_3d, points_2d))
+            return false;
+
+        // //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
+        if (is_keyframe)
+        {
+            InsertKeyFrame(last_to_be_tri, current_to_be_tri, matches);
+        }
 
         // end stage
         status_ = FrontendStatus::TRACKING_GOOD;
-        // relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
-        if (viewer_)
-            viewer_->AddCurrentFrame(current_frame_);
+        relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
+        return true;
+    }
 
+    bool Frontend::InsertKeyFrame(std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                                  std::vector<cv::DMatch> &matches)
+    {
+        //!---------------------Triangulate-------------------
+        Trangulation(last_frame_, current_frame_, matches, last_to_be_tri, current_to_be_tri);
+
+        //!-------------------End Stage------------------------
+        current_frame_->SetKeyFrame();
+        map_->InsertKeyFrame(current_frame_);
+        backend_->UpdateMap();
+        if (viewer_)
+        {
+            viewer_->AddCurrentFrame(current_frame_);
+            viewer_->UpdateMap();
+        }
         return true;
     }
 
     bool Frontend::Reset()
     {
         std::cout << "Reset is not implemented. " << std::endl;
-        return true;
-    }
-
-    bool Frontend::MatchWith3DMap(std::vector<cv::DMatch> &matches,
-                                  std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d)
-    {
-        Map::LandmarksType active_landmarks = map_->GetActiveMapPoints();
-        BfMatch3D(active_landmarks, current_frame_->descriptors_, matches);
-
-        std::cout << "MatchWith3DMap " << matches.size() << " / " << active_landmarks.size() << std::endl;
-        if (matches.size() < 5)
-            return false;
-        for (auto m : matches)
-        {
-            auto iter = active_landmarks.find(m.queryIdx);
-            auto pt3d = iter->second->Pos();
-            points_3d.emplace_back(pt3d[0], pt3d[1], pt3d[2]);
-            points_2d.emplace_back(current_frame_->features_[m.trainIdx]->position_.pt.x, current_frame_->features_[m.trainIdx]->position_.pt.y);
-
-            // Add Obs
-            iter->second->AddObservation(current_frame_->features_[m.trainIdx]);
-            current_frame_->features_[m.trainIdx]->status_ = STATUS::MATCH3D;
-            current_frame_->features_[m.trainIdx]->map_point_ = iter->second;
-        }
-
         return true;
     }
 
@@ -196,7 +281,8 @@ namespace ECT_SLAM
         SE3 pose_Tcw = frame1->Pose().inverse();
         for (int i = 0; i < matches.size(); i++)
         {
-            // if (points3F.at<cv::Vec3f>(i, 0)[2] <= 0) continue;
+            if (points3F.at<cv::Vec3f>(i, 0)[2] <= 0)
+                continue;
 
             Vec3 pworld = Vec3(points3F.at<cv::Vec3f>(i, 0)[0], points3F.at<cv::Vec3f>(i, 0)[1], points3F.at<cv::Vec3f>(i, 0)[2]);
 
@@ -237,7 +323,8 @@ namespace ECT_SLAM
         // std::cout << "-----R_e-----\n"<<R_e << std::endl;
         // std::cout << "------t------\n"<<t <<std::endl;
         // std::cout << "-----t_e------\n"<<t_e <<std::endl;
-        // std::cout << "-----se3-----\n"<< pose.log() << std::endl;
+        std::cout << "-----se3-----\n"
+                  << pose.log() << std::endl;
         // std::cout << "-----SE3-----\n"
         //           << pose.matrix() << std::endl;
         return true;
@@ -265,146 +352,4 @@ namespace ECT_SLAM
 
         return true;
     }
-
-    bool Frontend::MatchAndUpdateMap(Frame::Ptr frame1, Frame::Ptr frame2)
-    {
-        std::vector<cv::DMatch> matches;
-        std::vector<cv::Point2f> points1, points2;
-        //!-----------------------Match----------------------------
-        if (!Match2D2D(frame1, frame2, matches, points1, points2, 3))
-            return false;
-
-        //!-----------------------Delete Matches of MapPoints---------------
-        int i = 0;
-        std::vector<cv::DMatch> new_matches;
-        std::vector<cv::Point2f> new_points1, new_points2;
-        for (auto iter = matches.begin(); iter != matches.end(); i++)
-        {
-            if (!frame1->features_[iter->queryIdx]->map_point_.lock())
-            {
-                new_matches.push_back(matches[i]);
-                new_points1.push_back(points1[i]);
-                new_points2.push_back(points2[i]);
-            }
-            ++iter;
-        }
-        //!-----------------------Trangulation & Build Map From 2D-2D Matches----------------------------
-        Trangulation(frame1, frame2, new_matches, new_points1, new_points2);
-
-        double ratio = (double)matches.size() / (double)frame2->features_.size();
-        if (ratio < ratio_for_keyframe_)
-        {
-            current_frame_->SetKeyFrame();
-            map_->InsertKeyFrame(current_frame_);
-            backend_->UpdateMap();
-            if (viewer_)
-                viewer_->UpdateMap();
-        }
-        return true;
-    }
-
-    // brute-force matching
-    void BfMatch3D(const Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches)
-    {
-        std::vector<int> frame_dist(desc.size());
-        const int d_max = 40;
-        for (auto iter = landmarks.begin(); iter != landmarks.end(); iter++)
-        {
-            auto i1 = iter->first;
-            std::list<std::weak_ptr<Feature>> obs = iter->second->GetObs();
-
-            if (obs.empty())
-                continue;
-            bool flag = false;
-            cv::DMatch m{i1, 0, 256};
-
-            for (auto ob : obs)
-            {
-                auto lock = ob.lock();
-                if (lock)
-                    flag = true;
-                else
-                    continue;
-
-                for (size_t i2 = 0; i2 < desc.size(); ++i2)
-                {
-                    if (desc[i2].empty())
-                        continue;
-
-                    int distance = 0;
-                    for (int k = 0; k < 8; k++)
-                    {
-                        distance += _mm_popcnt_u32(lock->descriptor_[k] ^ desc[i2][k]);
-                    }
-                    if (distance < d_max && distance < m.distance)
-                    {
-                        m.distance = distance;
-                        m.trainIdx = i2;
-                    }
-                }
-            }
-
-            if (flag && m.distance < d_max && ((frame_dist[m.trainIdx] == 0) || (m.distance < frame_dist[m.trainIdx])))
-            {
-                matches.push_back(m);
-                frame_dist[m.trainIdx] = m.distance;
-            }
-        }
-    }
-
-    // void BfMatch3D(const Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches)
-    // {
-    //     const int d_max = 40;
-    //     // space for time
-    //     std::vector<std::list<std::weak_ptr<Feature>>> landmark_list;
-    //     std::vector<unsigned long> landmark_id;
-    //     for (auto iter = landmarks.begin(); iter != landmarks.end(); iter++)
-    //     {
-    //         landmark_list.push_back(iter->second->GetObs());
-    //         landmark_id.push_back(iter->first);
-    //     }
-
-    //     for (size_t i2 = 0; i2 < desc.size(); ++i2)
-    //     {
-    //         if (desc[i2].empty())
-    //             continue;
-    //         cv::DMatch m{0, i2, 256};
-
-    //         auto it = landmark_id.begin();
-    //         for (auto iter = landmark_list.begin(); iter != landmark_list.end(); it++, iter++)
-    //         {
-    //             auto i1 = *it;
-    //             std::list<std::weak_ptr<Feature>> obs = *iter;
-
-    //             if (obs.empty())
-    //                 continue;
-    //             bool flag = false;
-
-    //             for (auto ob : obs)
-    //             {
-    //                 auto lock = ob.lock();
-    //                 if (lock)
-    //                     flag = true;
-    //                 else
-    //                     continue;
-
-    //                 int distance = 0;
-    //                 for (int k = 0; k < 8; k++)
-    //                 {
-    //                     distance += _mm_popcnt_u32(lock->descriptor_[k] ^ desc[i2][k]);
-    //                 }
-    //                 if (distance < d_max && distance < m.distance)
-    //                 {
-    //                     m.distance = distance;
-    //                     m.queryIdx = i1;
-    //                 }
-    //             }
-
-    //             if (flag && m.distance < d_max)
-    //             {
-    //                 matches.push_back(m);
-    //             }
-    //         }
-    //     }
-    // }
 } // namespace ECT_SLAM
