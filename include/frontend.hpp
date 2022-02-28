@@ -69,8 +69,8 @@ namespace ECT_SLAM
       bool Reset();
 
       bool TrackLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
-                         std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
-                         std::vector<cv::DMatch> &matches);
+                          std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                          std::vector<cv::DMatch> &matches);
 
       bool InsertKeyFrame(std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
                           std::vector<cv::DMatch> &matches);
@@ -78,6 +78,8 @@ namespace ECT_SLAM
       bool EstimatePnP(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d);
 
       bool DetectFeature();
+
+      bool DetectAndTriNewFeature();
 
       bool MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2);
 
@@ -117,6 +119,7 @@ namespace ECT_SLAM
       double ratio_for_keyframe_ = 0.35;
 
       // utilities
+      cv::Ptr<cv::GFTTDetector> gftt_;
       cv::Ptr<cv::ORB> orb_; // feature detector in opencv
    };
 

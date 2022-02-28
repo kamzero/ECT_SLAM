@@ -14,6 +14,9 @@ namespace ECT_SLAM
 
     Frontend::Frontend()
     {
+        gftt_ =
+            cv::GFTTDetector::create(Config::Get<int>("num_features"), 0.01, 20);
+
         orb_ = cv::ORB::create();
         num_features_init_ = Config::Get<int>("num_features_init");
         num_features_ = Config::Get<int>("num_features");
@@ -23,6 +26,7 @@ namespace ECT_SLAM
 
     bool Frontend::AddFrame(ECT_SLAM::Frame::Ptr frame)
     {
+        last_frame_ = current_frame_;
         current_frame_ = frame;
         if (current_frame_->id_ == 0)
             first_frame_ = frame;
@@ -41,7 +45,6 @@ namespace ECT_SLAM
             break;
         }
 
-        last_frame_ = current_frame_;
         return true;
     }
 
@@ -96,7 +99,7 @@ namespace ECT_SLAM
         cv::Mat error;
         cv::calcOpticalFlowPyrLK(
             last_frame_->img_, current_frame_->img_, kps_last,
-            kps_current, status, error, cv::Size(11, 11), 3,
+            kps_current, status, error, cv::Size(11, 11), 1,
             cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30,
                              0.01),
             cv::OPTFLOW_USE_INITIAL_FLOW);
@@ -135,12 +138,8 @@ namespace ECT_SLAM
             }
         }
 
-        LOG(INFO) << kps_last.size() << " features in total.";
-        LOG(INFO) << "Find " << num_good_pts << " in the last image. ";
-        LOG(INFO) << last_to_be_tri.size() << " features to be triangulate.";
-
         double ratio = (double)num_good_pts / (double)(kps_last.size());
-        LOG(INFO) << "ratio " << ratio << " ? " << ratio_for_keyframe_;
+        LOG(INFO) << "ratio: " << num_good_pts << "/" << kps_last.size() << " = " << ratio << ". ";
 
         if (ratio < ratio_for_keyframe_)
             return true;
@@ -186,8 +185,7 @@ namespace ECT_SLAM
         bool is_keyframe;
         is_keyframe = TrackLastFrame(points_3d, points_2d, last_to_be_tri, current_to_be_tri, matches);
 
-        if (!EstimatePnP(points_3d, points_2d))
-            return false;
+        EstimatePnP(points_3d, points_2d);
 
         // //!--------------Add New MapPoints With 2D-2D Matches(last frame)--------------
         if (is_keyframe)
@@ -198,6 +196,89 @@ namespace ECT_SLAM
         // end stage
         status_ = FrontendStatus::TRACKING_GOOD;
         relative_motion_ = current_frame_->Pose() * last_frame_->Pose().inverse();
+        if (viewer_)
+            viewer_->AddCurrentFrame(current_frame_);
+        return true;
+    }
+
+    bool Frontend::DetectAndTriNewFeature()
+    {
+        std::vector<cv::Point2f> points1, points2;
+
+        cv::Mat mask(last_frame_->img_.size(), CV_8UC1, 255);
+        for (auto &feat : last_frame_->features_)
+        {
+            cv::rectangle(mask, feat->position_.pt - cv::Point2f(10, 10),
+                          feat->position_.pt + cv::Point2f(10, 10), 0, CV_FILLED);
+        }
+        std::vector<cv::KeyPoint> keypoints, final_kps;
+        gftt_->detect(last_frame_->img_, keypoints, mask);
+
+        std::vector<cv::Point2f> kps_last, kps_current;
+
+        for (auto &kp : keypoints)
+        {
+            kps_last.push_back(kp.pt);
+            kps_current.push_back(kp.pt);
+            final_kps.push_back(kp);
+        }
+
+        std::vector<uchar> status;
+        cv::Mat error;
+        cv::calcOpticalFlowPyrLK(
+            last_frame_->img_, current_frame_->img_, kps_last,
+            kps_current, status, error, cv::Size(11, 11), 1,
+            cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30,
+                             0.01),
+            cv::OPTFLOW_USE_INITIAL_FLOW);
+
+        for (size_t i = 0; i < status.size(); ++i)
+        {
+            if (status[i])
+            {
+                points1.push_back(kps_last[i]);
+                points2.push_back(kps_current[i]);
+            }
+        }
+
+        if (!points2.size())
+            return false;
+
+        cv::Mat P1, P2;
+        Mat34f P1_e = camera_->K() * last_frame_->RT();
+        Mat34f P2_e = camera_->K() * current_frame_->RT();
+        cv::eigen2cv(P1_e, P1);
+        cv::eigen2cv(P2_e, P2);
+
+        cv::Mat pointsH(1, points2.size(), CV_32FC4);
+        cv::Mat points3F;
+
+        cv::triangulatePoints(P1, P2, points1, points2, pointsH);
+        cv::convertPointsFromHomogeneous(pointsH.t(), points3F);
+
+        SE3 pose_Tcw = last_frame_->Pose().inverse();
+        for (int i = 0; i < points2.size(); i++)
+        {
+            if (points3F.at<cv::Vec3f>(i, 0)[2] <= 0)
+                continue;
+
+            Vec3 pworld = Vec3(points3F.at<cv::Vec3f>(i, 0)[0], points3F.at<cv::Vec3f>(i, 0)[1], points3F.at<cv::Vec3f>(i, 0)[2]);
+
+            Feature::Ptr current_feature(new Feature(current_frame_, final_kps[i]));
+            current_frame_->features_.push_back(current_feature);
+
+            // auto new_map_point = MapPoint::CreateNewMappoint();
+            // pworld = pose_Tcw * pworld;
+            // new_map_point->SetPos(pworld);
+            // new_map_point->AddObservation(current_feature);
+
+            // current_feature->map_point_ = new_map_point;
+            current_feature->status_ = STATUS::MATCH2D;
+
+            // map_->InsertMapPoint(new_map_point);
+        }
+        std::cout << "DetectAndAdd " << points2.size() << " new features\n";
+
         return true;
     }
 
@@ -207,13 +288,14 @@ namespace ECT_SLAM
         //!---------------------Triangulate-------------------
         Trangulation(last_frame_, current_frame_, matches, last_to_be_tri, current_to_be_tri);
 
+        DetectAndTriNewFeature();
+
         //!-------------------End Stage------------------------
         current_frame_->SetKeyFrame();
         map_->InsertKeyFrame(current_frame_);
         backend_->UpdateMap();
         if (viewer_)
         {
-            viewer_->AddCurrentFrame(current_frame_);
             viewer_->UpdateMap();
         }
         return true;
