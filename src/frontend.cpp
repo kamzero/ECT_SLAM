@@ -84,6 +84,9 @@ namespace ECT_SLAM
         {
             auto last_feature = last_frame_->features_[m.queryIdx];
             auto current_feature = current_frame_->features_[m.trainIdx];
+
+            if (abs(last_feature->position_.pt.x - current_feature->position_.pt.x) > 20 || abs(last_feature->position_.pt.y - current_feature->position_.pt.y) > 20)
+                continue;
             current_feature->map_point_ = last_feature->map_point_;
             if (auto mp = last_feature->map_point_.lock())
             {
