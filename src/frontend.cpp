@@ -79,16 +79,16 @@ namespace ECT_SLAM
         std::vector<cv::Point2f> kps_last, kps_current;
         for (auto &kp : last_frame_->features_)
         {
-            if (kp->map_point_.lock())
-            {
-                // use project point
-                auto mp = kp->map_point_.lock();
-                auto px =
-                    camera_->world2pixel(mp->pos_, current_frame_->Pose());
-                kps_last.push_back(kp->position_.pt);
-                kps_current.push_back(cv::Point2f(px[0], px[1]));
-            }
-            else
+            // if (kp->map_point_.lock())
+            // {
+            //     // use project point
+            //     auto mp = kp->map_point_.lock();
+            //     auto px =
+            //         camera_->world2pixel(mp->pos_, current_frame_->Pose());
+            //     kps_last.push_back(kp->position_.pt);
+            //     kps_current.push_back(cv::Point2f(px[0], px[1]));
+            // }
+            // else
             {
                 kps_last.push_back(kp->position_.pt);
                 kps_current.push_back(kp->position_.pt);
