@@ -7,7 +7,6 @@
 #include "frontend.hpp"
 #include "map.hpp"
 #include "viewer.hpp"
-#include "orb.hpp"
 
 namespace ECT_SLAM
 {
@@ -17,7 +16,10 @@ namespace ECT_SLAM
         gftt_ =
             cv::GFTTDetector::create(Config::Get<int>("num_features"), 0.01, 20);
 
-        orb_ = cv::ORB::create();
+        detector_ = cv::ORB::create();
+        descriptor_ = cv::ORB::create();
+        matcher_ = cv::DescriptorMatcher::create("BruteForce-Hamming");
+
         num_features_init_ = Config::Get<int>("num_features_init");
         num_features_ = Config::Get<int>("num_features");
         num_for_keyframe_ = Config::Get<int>("num_for_keyframe");
@@ -68,6 +70,49 @@ namespace ECT_SLAM
         }
 
         return true;
+    }
+
+    bool Frontend::MatchLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
+                                  std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                                  std::vector<cv::DMatch> &matches)
+    {
+        std::vector<cv::DMatch> bf_matches;
+        matcher_->match(last_frame_->descriptors_, current_frame_->descriptors_, bf_matches);
+
+        int num_good_pts = 0;
+        for (auto m : bf_matches)
+        {
+            auto last_feature = last_frame_->features_[m.queryIdx];
+            auto current_feature = current_frame_->features_[m.trainIdx];
+            current_feature->map_point_ = last_feature->map_point_;
+            if (auto mp = last_feature->map_point_.lock())
+            {
+                num_good_pts++;
+                auto pt3d = mp->Pos();
+                points_3d.emplace_back(pt3d[0], pt3d[1], pt3d[2]);
+                points_2d.emplace_back(current_feature->position_.pt.x, current_feature->position_.pt.y);
+
+                // Add Obs
+                mp->AddObservation(current_feature);
+                current_feature->status_ = STATUS::MATCH3D;
+            }
+            else
+            {
+                last_to_be_tri.emplace_back(last_feature->position_.pt.x, last_feature->position_.pt.y);
+                current_to_be_tri.emplace_back(current_feature->position_.pt.x, current_feature->position_.pt.y);
+                matches.push_back(m);
+
+                current_feature->status_ = STATUS::MATCH2D;
+            }
+        }
+        double ratio = (double)num_good_pts / (double)(bf_matches.size());
+        LOG(INFO) << "ratio: " << num_good_pts << "/" << bf_matches.size() << " = " << ratio << ". ";
+
+        if (ratio < ratio_for_keyframe_)
+            return true;
+        if (num_good_pts < num_for_keyframe_)
+            return true;
+        return false;
     }
 
     bool Frontend::TrackLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
@@ -182,8 +227,10 @@ namespace ECT_SLAM
         std::vector<cv::Point2f> last_to_be_tri;
         std::vector<cv::Point2f> current_to_be_tri;
 
+        DetectFeature();
+
         bool is_keyframe;
-        is_keyframe = TrackLastFrame(points_3d, points_2d, last_to_be_tri, current_to_be_tri, matches);
+        is_keyframe = MatchLastFrame(points_3d, points_2d, last_to_be_tri, current_to_be_tri, matches);
 
         EstimatePnP(points_3d, points_2d);
 
@@ -288,8 +335,6 @@ namespace ECT_SLAM
         //!---------------------Triangulate-------------------
         Trangulation(last_frame_, current_frame_, matches, last_to_be_tri, current_to_be_tri);
 
-        DetectAndTriNewFeature();
-
         //!-------------------End Stage------------------------
         current_frame_->SetKeyFrame();
         map_->InsertKeyFrame(current_frame_);
@@ -311,11 +356,11 @@ namespace ECT_SLAM
     {
         std::vector<cv::KeyPoint> keypoints;
         cv::FAST(current_frame_->img_, keypoints, 40);
-        ComputeORB(current_frame_->img_, keypoints, current_frame_->descriptors_);
+        descriptor_->compute(current_frame_->img_, keypoints, current_frame_->descriptors_);
 
         for (int i = 0; i < keypoints.size(); i++)
         {
-            Feature::Ptr feature(new Feature(current_frame_, keypoints[i], current_frame_->descriptors_[i]));
+            Feature::Ptr feature(new Feature(current_frame_, keypoints[i]));
             current_frame_->features_.push_back(feature);
         }
 
@@ -326,7 +371,7 @@ namespace ECT_SLAM
                              std::vector<cv::DMatch> &matches,
                              std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2, int thres = 8)
     {
-        BfMatch(frame1->descriptors_, frame2->descriptors_, matches);
+        matcher_->match(frame1->descriptors_, frame2->descriptors_, matches);
         if (matches.size() < thres)
             return false;
         for (auto m : matches)

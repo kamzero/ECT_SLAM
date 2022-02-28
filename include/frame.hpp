@@ -2,7 +2,6 @@
 
 #include "camera.hpp"
 #include "common_include.hpp"
-#include "orb.hpp"
 
 namespace ECT_SLAM {
 
@@ -29,7 +28,9 @@ struct Frame {
 
     // extracted features in image
     std::vector<std::shared_ptr<Feature>> features_;
-    std::vector<DescType> descriptors_;
+    // std::vector<DescType> descriptors_;
+    cv::Mat descriptors_;
+
 
    public:  // data members
     Frame() {}

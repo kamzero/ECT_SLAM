@@ -68,7 +68,6 @@ src/feature.cpp
 src/map.cpp
 src/mappoint.cpp
 src/camera.cpp
-src/orb.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

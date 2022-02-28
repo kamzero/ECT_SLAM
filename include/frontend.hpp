@@ -72,6 +72,10 @@ namespace ECT_SLAM
                           std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
                           std::vector<cv::DMatch> &matches);
 
+      bool MatchLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
+                          std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
+                          std::vector<cv::DMatch> &matches);
+
       bool InsertKeyFrame(std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
                           std::vector<cv::DMatch> &matches);
 
@@ -120,9 +124,10 @@ namespace ECT_SLAM
 
       // utilities
       cv::Ptr<cv::GFTTDetector> gftt_;
-      cv::Ptr<cv::ORB> orb_; // feature detector in opencv
-   };
 
-   void BfMatch3D(const ECT_SLAM::Map::LandmarksType &landmarks, const vector<DescType> &desc, vector<cv::DMatch> &matches);
+      cv::Ptr<cv::FeatureDetector> detector_;
+      cv::Ptr<cv::DescriptorExtractor> descriptor_;
+      cv::Ptr<cv::DescriptorMatcher> matcher_;
+   };
 
 } // namespace ECT_SLAM

@@ -3,6 +3,8 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
+#include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,7 +76,7 @@ namespace ECT_SLAM
 
         Map::KeyframesType keyframes = map_->GetAllKeyFrames();
 
-        ofstream f;
+        std::ofstream f;
         f.open(filename.c_str());
         f << std::fixed;
 
