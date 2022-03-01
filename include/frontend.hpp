@@ -83,6 +83,8 @@ namespace ECT_SLAM
 
       bool DetectFeature();
 
+      void RejectWithF(Frame::Ptr frame1, Frame::Ptr frame2, std::vector<cv::DMatch> &matches,std::vector<uchar>& status);
+
       bool DetectAndTriNewFeature();
 
       bool MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2);

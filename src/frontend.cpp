@@ -10,7 +10,6 @@
 
 namespace ECT_SLAM
 {
-
     Frontend::Frontend()
     {
         gftt_ =
@@ -72,6 +71,23 @@ namespace ECT_SLAM
         return true;
     }
 
+    void Frontend::RejectWithF(Frame::Ptr frame1, Frame::Ptr frame2, std::vector<cv::DMatch> &matches, std::vector<uchar> &status)
+    {
+        if (matches.size() >= 8)
+        {
+            std::vector<cv::Point2f> points1, points2;
+            for (auto m : matches)
+            {
+                auto last_feature = frame1->features_[m.queryIdx];
+                auto current_feature = frame2->features_[m.trainIdx];
+                points1.emplace_back(last_feature->position_.pt.x, last_feature->position_.pt.y);
+                points2.emplace_back(current_feature->position_.pt.x, current_feature->position_.pt.y);
+            }
+
+            cv::findFundamentalMat(points1, points1, cv::FM_RANSAC, 1.0, 0.99, status);
+        }
+    }
+
     bool Frontend::MatchLastFrame(std::vector<cv::Point3d> &points_3d, std::vector<cv::Point2d> &points_2d,
                                   std::vector<cv::Point2f> &last_to_be_tri, std::vector<cv::Point2f> &current_to_be_tri,
                                   std::vector<cv::DMatch> &matches)
@@ -81,15 +97,21 @@ namespace ECT_SLAM
         cv::Mat mask(last_frame_->img_.size(), CV_8UC1, 255);
         int num_good_pts = 0;
 
+        std::vector<uchar> status;
+        RejectWithF(last_frame_, current_frame_, bf_matches, status);
+
         auto min_max = minmax_element(bf_matches.begin(), bf_matches.end(),
                                       [](const cv::DMatch &m1, const cv::DMatch &m2)
                                       { return m1.distance < m2.distance; });
         double min_dist = min_max.first->distance;
         double max_dist = min_max.second->distance;
 
+        int i = 0;
         //！ Match with 3D & Get MASK
         for (auto m : bf_matches)
         {
+            if (!status[i++])
+                continue;
             auto last_feature = last_frame_->features_[m.queryIdx];
             auto current_feature = current_frame_->features_[m.trainIdx];
 
@@ -115,9 +137,12 @@ namespace ECT_SLAM
             }
         }
 
+        i = 0;
         //! Get 2D-Matches not within mask
         for (auto m : bf_matches)
         {
+            if (!status[i++])
+                continue;
             auto last_feature = last_frame_->features_[m.queryIdx];
             auto current_feature = current_frame_->features_[m.trainIdx];
 
@@ -140,8 +165,8 @@ namespace ECT_SLAM
             }
         }
 
-        double ratio = (double)num_good_pts / (double)(num_good_pts+matches.size());
-        LOG(INFO) << "ratio: " << num_good_pts << "/" << (num_good_pts+matches.size()) << " = " << ratio << ". ";
+        double ratio = (double)num_good_pts / (double)(num_good_pts + matches.size());
+        LOG(INFO) << "ratio: " << num_good_pts << "/" << (num_good_pts + matches.size()) << " = " << ratio << ". ";
 
         if (ratio < ratio_for_keyframe_)
             return true;
@@ -526,4 +551,5 @@ namespace ECT_SLAM
 
         return true;
     }
+
 } // namespace ECT_SLAM
