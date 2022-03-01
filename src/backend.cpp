@@ -45,10 +45,11 @@ namespace ECT_SLAM
     void Backend::Optimize(Map::KeyframesType &keyframes_, Map::LandmarksType &landmarks)
     {
         auto it = keyframes_.begin();
-        if(keyframes_.size()>20)
-            std::advance(it, keyframes_.size()-20);
+        if (keyframes_.size() > 20)
+            std::advance(it, keyframes_.size() - 20);
         Map::KeyframesType keyframes = Map::KeyframesType(it, keyframes_.end());
-        std::cout << "######BackEnd###### Optimizing " << keyframes.size() << std::endl;
+        std::cout << "#BackEnd# Optimizing [" << keyframes.begin()->first << ","
+                  << keyframes.begin()->first + keyframes.size() << "]" << std::endl;
 
         //-----------------setup g2o-----------------
         typedef g2o::BlockSolver_6_3 BlockSolverType;
@@ -82,7 +83,7 @@ namespace ECT_SLAM
             VertexPose *vertex_pose = new VertexPose(); // camera vertex_pose
             vertex_pose->setId(count);
             vertex_pose->setEstimate(kf->Pose());
-            if(count++ < 2)
+            if (count++ < 2)
                 vertex_pose->setFixed(true);
             optimizer.addVertex(vertex_pose);
             vertices.insert({kf->keyframe_id_, vertex_pose});
@@ -127,11 +128,11 @@ namespace ECT_SLAM
 
         //-----------------do optimization and eliminate the outliers-----------------
         optimizer.initializeOptimization();
-        optimizer.optimize(10);
+        optimizer.optimize(Config::Get<int>("num_iteration"));
 
         int cnt_outlier = 0, cnt_inlier = 0;
         int iteration = 0;
-        while (iteration < 5)
+        while (iteration < 8)
         {
             cnt_outlier = 0;
             cnt_inlier = 0;
@@ -174,7 +175,7 @@ namespace ECT_SLAM
             }
         }
 
-        LOG(INFO) << "Outlier/Inlier in optimization: " << cnt_outlier << "/"<< cnt_inlier;
+        LOG(INFO) << "Outlier/Inlier in optimization: " << cnt_outlier << "/" << cnt_inlier;
 
         //-----------------Set pose and lanrmark position-----------------
         auto iter = keyframes.begin();

@@ -48,7 +48,7 @@ namespace ECT_SLAM
         backend_->SetMap(map_);
         backend_->SetCameras(camera_);
 
-        if(viewer_)
+        if (viewer_)
             viewer_->SetMap(map_);
 
         return true;
@@ -57,7 +57,9 @@ namespace ECT_SLAM
     cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
     {
         auto new_frame = Frame::CreateFrame();
-        new_frame->img_ = im;
+        // cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        cv::equalizeHist(im, new_frame->img_);
+        // clahe->apply(src, new_frame->img_);
         new_frame->time_stamp_ = timestamp;
         bool success = frontend_->AddFrame(new_frame);
         return im;
@@ -66,7 +68,7 @@ namespace ECT_SLAM
     void System::Shutdown()
     {
         backend_->Stop();
-        if(viewer_)
+        if (viewer_)
             viewer_->Close();
     }
 
@@ -94,7 +96,7 @@ namespace ECT_SLAM
                  Eigen::AngleAxisd(rvec[2], Eigen::Vector3d::UnitX());
 
             f << time << " " << tvec[0] << " " << tvec[1] << " " << tvec[2] << " "
-                      << qt.x() << " " << qt.y() << " " << qt.z() << " " << qt.w() << "\n";
+              << qt.x() << " " << qt.y() << " " << qt.z() << " " << qt.w() << "\n";
         }
 
         f.close();

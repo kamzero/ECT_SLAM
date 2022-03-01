@@ -9,11 +9,18 @@ camera.fy: 516.5
 camera.cx: 325.1
 camera.cy: 249.7
 
+# camera.fx: 493.0167
+# camera.fy: 491.55953
+# camera.cx: 317.97856
+# camera.cy: 242.392
+
+is_equalize: 1
+
 num_features: 150
 num_features_init: 50
 num_features_tracking: 50
 ratio_for_keyframe: 0.50
-num_for_keyframe: 100
+num_for_keyframe: 80
 
 
 # ros
@@ -21,3 +28,4 @@ image_topic: "/camera/rgb/image_color" #"cam0/image_raw"
 
 # backend
 chi2_th: 5.991
+num_iteration: 20

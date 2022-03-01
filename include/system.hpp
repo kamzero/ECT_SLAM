@@ -3,6 +3,7 @@
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
+#include<opencv2/imgproc/imgproc.hpp>
 
 #include <unistd.h>
 #include <stdio.h>

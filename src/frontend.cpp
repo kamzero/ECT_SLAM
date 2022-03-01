@@ -81,6 +81,12 @@ namespace ECT_SLAM
         cv::Mat mask(last_frame_->img_.size(), CV_8UC1, 255);
         int num_good_pts = 0;
 
+        auto min_max = minmax_element(bf_matches.begin(), bf_matches.end(),
+                                      [](const cv::DMatch &m1, const cv::DMatch &m2)
+                                      { return m1.distance < m2.distance; });
+        double min_dist = min_max.first->distance;
+        double max_dist = min_max.second->distance;
+
         //！ Match with 3D & Get MASK
         for (auto m : bf_matches)
         {
@@ -88,6 +94,9 @@ namespace ECT_SLAM
             auto current_feature = current_frame_->features_[m.trainIdx];
 
             if (abs(last_feature->position_.pt.x - current_feature->position_.pt.x) > 40 || abs(last_feature->position_.pt.y - current_feature->position_.pt.y) > 40)
+                continue;
+
+            if (m.distance > std::max(2 * min_dist, 60.0))
                 continue;
             current_feature->map_point_ = last_feature->map_point_;
             if (auto mp = last_feature->map_point_.lock())
@@ -105,7 +114,7 @@ namespace ECT_SLAM
                               last_feature->position_.pt + cv::Point2f(3, 3), 0, CV_FILLED);
             }
         }
-        
+
         //! Get 2D-Matches not within mask
         for (auto m : bf_matches)
         {
@@ -115,7 +124,10 @@ namespace ECT_SLAM
             if (abs(last_feature->position_.pt.x - current_feature->position_.pt.x) > 40 || abs(last_feature->position_.pt.y - current_feature->position_.pt.y) > 40)
                 continue;
 
-            if(!mask.at<uchar>(last_feature->position_.pt))
+            if (m.distance > std::max(2 * min_dist, 60.0))
+                continue;
+
+            if (!mask.at<uchar>(last_feature->position_.pt))
                 continue;
 
             if (last_feature->map_point_.expired())
@@ -128,9 +140,8 @@ namespace ECT_SLAM
             }
         }
 
-
-        double ratio = (double)num_good_pts / (double)(bf_matches.size());
-        LOG(INFO) << "ratio: " << num_good_pts << "/" << bf_matches.size() << " = " << ratio << ". ";
+        double ratio = (double)num_good_pts / (double)(num_good_pts+matches.size());
+        LOG(INFO) << "ratio: " << num_good_pts << "/" << (num_good_pts+matches.size()) << " = " << ratio << ". ";
 
         if (ratio < ratio_for_keyframe_)
             return true;
@@ -241,7 +252,7 @@ namespace ECT_SLAM
         std::cout << "Tracking No." << current_frame_->id_ << " ... ";
 
         // initial guess
-        current_frame_->SetPose(last_frame_->Pose());
+        // current_frame_->SetPose(last_frame_->Pose());
         current_frame_->SetPose(relative_motion_ * last_frame_->Pose());
 
         //!--------------PnP Estimate With 2D-3D Matches(map)--------------------------
@@ -395,14 +406,26 @@ namespace ECT_SLAM
                              std::vector<cv::DMatch> &matches,
                              std::vector<cv::Point2f> &points1, std::vector<cv::Point2f> &points2, int thres = 8)
     {
-        matcher_->match(frame1->descriptors_, frame2->descriptors_, matches);
-        if (matches.size() < thres)
-            return false;
-        for (auto m : matches)
+        std::vector<cv::DMatch> bf_matches;
+        matcher_->match(frame1->descriptors_, frame2->descriptors_, bf_matches);
+
+        auto min_max = minmax_element(bf_matches.begin(), bf_matches.end(),
+                                      [](const cv::DMatch &m1, const cv::DMatch &m2)
+                                      { return m1.distance < m2.distance; });
+        double min_dist = min_max.first->distance;
+        double max_dist = min_max.second->distance;
+
+        for (auto m : bf_matches)
         {
+
+            if (m.distance > std::max(2 * min_dist, 60.0))
+                continue;
+            matches.push_back(m);
             points1.emplace_back(frame1->features_[m.queryIdx]->position_.pt.x, frame1->features_[m.queryIdx]->position_.pt.y);
             points2.emplace_back(frame2->features_[m.trainIdx]->position_.pt.x, frame2->features_[m.trainIdx]->position_.pt.y);
         }
+        if (matches.size() < thres)
+            return false;
         return true;
     }
 
