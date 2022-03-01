@@ -78,8 +78,10 @@ namespace ECT_SLAM
     {
         std::vector<cv::DMatch> bf_matches;
         matcher_->match(last_frame_->descriptors_, current_frame_->descriptors_, bf_matches);
-
+        cv::Mat mask(last_frame_->img_.size(), CV_8UC1, 255);
         int num_good_pts = 0;
+
+        //！ Match with 3D & Get MASK
         for (auto m : bf_matches)
         {
             auto last_feature = last_frame_->features_[m.queryIdx];
@@ -98,8 +100,25 @@ namespace ECT_SLAM
                 // Add Obs
                 mp->AddObservation(current_feature);
                 current_feature->status_ = STATUS::MATCH3D;
+
+                cv::rectangle(mask, last_feature->position_.pt - cv::Point2f(3, 3),
+                              last_feature->position_.pt + cv::Point2f(3, 3), 0, CV_FILLED);
             }
-            else
+        }
+        
+        //! Get 2D-Matches not within mask
+        for (auto m : bf_matches)
+        {
+            auto last_feature = last_frame_->features_[m.queryIdx];
+            auto current_feature = current_frame_->features_[m.trainIdx];
+
+            if (abs(last_feature->position_.pt.x - current_feature->position_.pt.x) > 40 || abs(last_feature->position_.pt.y - current_feature->position_.pt.y) > 40)
+                continue;
+
+            if(!mask.at<uchar>(last_feature->position_.pt))
+                continue;
+
+            if (last_feature->map_point_.expired())
             {
                 last_to_be_tri.emplace_back(last_feature->position_.pt.x, last_feature->position_.pt.y);
                 current_to_be_tri.emplace_back(current_feature->position_.pt.x, current_feature->position_.pt.y);
@@ -108,6 +127,8 @@ namespace ECT_SLAM
                 current_feature->status_ = STATUS::MATCH2D;
             }
         }
+
+
         double ratio = (double)num_good_pts / (double)(bf_matches.size());
         LOG(INFO) << "ratio: " << num_good_pts << "/" << bf_matches.size() << " = " << ratio << ". ";
 

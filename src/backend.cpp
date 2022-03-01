@@ -4,6 +4,7 @@
 #include "map.hpp"
 #include "mappoint.hpp"
 #include "g2o_types.hpp"
+#include "config.hpp"
 
 namespace ECT_SLAM
 {
@@ -66,7 +67,7 @@ namespace ECT_SLAM
         std::map<unsigned long, VertexXYZ *> vertices_landmarks;
         // edges
         int index = 1;
-        double chi2_th = 5.991; // robust kernel 阈值
+        double chi2_th = Config::Get<double>("chi2_th"); //5.991; // robust kernel 阈值
         std::map<EdgeProjection *, Feature::Ptr> edges_and_features;
         // K 和左右外参
         Mat33 K = camera_->K_d();
