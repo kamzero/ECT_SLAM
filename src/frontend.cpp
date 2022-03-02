@@ -55,7 +55,7 @@ namespace ECT_SLAM
 
         DetectFeature();
 
-        if (current_frame_->id_ >= 5)
+        if (current_frame_->id_ >= 10)
         {
             if (MatchAndBuildMap(first_frame_, current_frame_))
             {
@@ -531,6 +531,7 @@ namespace ECT_SLAM
 
     bool Frontend::MatchAndBuildMap(Frame::Ptr frame1, Frame::Ptr frame2)
     {
+
         std::vector<cv::DMatch> matches;
         std::vector<cv::Point2f> points1, points2;
         //!-----------------------Match----------------------------

@@ -10,7 +10,7 @@ MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 add_definitions("-DENABLE_SSE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
-
+# add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 set(CMAKE_BUILD_TYPE Release)
 

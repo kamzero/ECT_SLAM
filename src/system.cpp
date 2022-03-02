@@ -3,6 +3,7 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
+#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -52,6 +53,13 @@ namespace ECT_SLAM
             viewer_->SetMap(map_);
 
         return true;
+    }
+
+    void System::ProcessImage(std::string & image_path, const double & timestamp){
+        cv::Mat image = cv::imread(image_path, 0);
+        cv::Mat dst;
+        cv::resize(image, dst, cv::Size(640, 480));
+        TrackMonocular(dst, timestamp);
     }
 
     cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)

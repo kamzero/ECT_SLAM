@@ -37,6 +37,8 @@ public:
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
 
+    void ProcessImage(std::string & image_path, const double & timestamp);
+
     bool Init();
 
     // All threads will be requested to finish.
