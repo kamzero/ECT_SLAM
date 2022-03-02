@@ -3,6 +3,6 @@ ECT_SLAM is a real-time SLAM framework for **Monocular Visual Systems**. It feat
 ## Reference
 * **ORB-SLAM: A Versatile and Accurate Monocular SLAM System**, Mur-Artal, Raul, Jose Maria Martinez Montiel, Juan D. Tardos, IEEE Transactions on Robotics [PDF](http://webdiis.unizar.es/~raulmur/MurMontielTardosTRO15.pdf)
 
-* **VINS-Mono: A Robust and Versatile Monocular Visual-Inertial State Estimator**, Tong Qin, Peiliang Li, Zhenfei Yang, Shaojie Shen, IEEE Transactions on Robotics[pdf](https://ieeexplore.ieee.org/document/8421746/?arnumber=8421746&source=authoralert) 
+* **VINS-Mono: A Robust and Versatile Monocular Visual-Inertial State Estimator**, Tong Qin, Peiliang Li, Zhenfei Yang, Shaojie Shen, IEEE Transactions on Robotics [PDF](https://ieeexplore.ieee.org/document/8421746/?arnumber=8421746&source=authoralert) 
 
-* **视觉 SLAM 十四讲: 从理论到实践**, 高翔， 电子工业出版社， 2017 
+* **视觉 SLAM 十四讲: 从理论到实践**， 高翔， 电子工业出版社， 2017 
