@@ -10,13 +10,12 @@ MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 add_definitions("-DENABLE_SSE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
-
+# add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall  -O2 ${SSE_FLAGS} -msse4")
-set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++11 -O3 -fopenmp -pthread")
-
+set(CMAKE_CXX_FLAGS "-std=c++14 -Wall  -O2 ${SSE_FLAGS} -msse4")
+set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++14 -O3 -fopenmp -pthread")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
@@ -32,10 +31,22 @@ find_package(Eigen3 REQUIRED)
 # pangolin
 find_package(Pangolin REQUIRED)
 
+# G2O
+find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIRS})
+
+# glog
+find_package(Glog REQUIRED)
+include_directories(${GLOG_INCLUDE_DIRS})
+
 # Sophus
 find_package(Sophus REQUIRED)
 # set(Sophus_LIBRARIES libSophus.so)
 # include_directories(${Sophus_INCLUDE_DIRS})
+
+# csparse
+find_package(CSparse REQUIRED)
+include_directories(${CSPARSE_INCLUDE_DIR})
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -57,13 +68,15 @@ src/feature.cpp
 src/map.cpp
 src/mappoint.cpp
 src/camera.cpp
-src/orb.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
+g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
+${CSPARSE_LIBRARY}
+${GLOG_LIBRARIES}
 pthread
 )
 

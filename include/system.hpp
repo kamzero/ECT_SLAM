@@ -3,6 +3,7 @@
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
+#include<opencv2/imgproc/imgproc.hpp>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -36,6 +37,8 @@ public:
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
 
+    void ProcessImage(std::string & image_path, const double & timestamp);
+
     bool Init();
 
     // All threads will be requested to finish.
@@ -43,7 +46,7 @@ public:
     // This function must be called before saving the trajectory.
     void Shutdown();
 
-    // Save keyframe poses in the TUM RGB-D dataset format.
+    // Save keyframe poses in the TUM dataset format.
     // This method works for all sensor input.
     // Call first Shutdown()
     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset

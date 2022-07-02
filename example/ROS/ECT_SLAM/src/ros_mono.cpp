@@ -10,6 +10,7 @@
 #include<opencv2/core/core.hpp>
 
 #include"system.hpp"
+#include"config.hpp"
 
 using namespace std;
 
@@ -28,9 +29,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "Mono");
     ros::start();
 
-    if(argc != 2)
+    if(argc != 3)
     {
-        cerr << endl << "Usage: rosrun ECT_SLAM Mono path_to_settings" << endl;        
+        cerr << endl << "Usage: rosrun ECT_SLAM Mono path_to_settings image_topic" << endl;        
         ros::shutdown();
         return 1;
     }    
@@ -39,11 +40,10 @@ int main(int argc, char **argv)
     ECT_SLAM::System SLAM(argv[1],ECT_SLAM::System::MONOCULAR);
     SLAM.Init();
 
-
     ImageGrabber igb(&SLAM);
 
     ros::NodeHandle nodeHandler;
-    ros::Subscriber sub = nodeHandler.subscribe("cam0/image_raw", 1, &ImageGrabber::GrabImage,&igb);
+    ros::Subscriber sub = nodeHandler.subscribe(argv[2], 1, &ImageGrabber::GrabImage,&igb);
 
     ros::spin();
 

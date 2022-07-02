@@ -28,6 +28,9 @@ struct Frame {
 
     // extracted features in image
     std::vector<std::shared_ptr<Feature>> features_;
+    // std::vector<DescType> descriptors_;
+    cv::Mat descriptors_;
+
 
    public:  // data members
     Frame() {}
@@ -38,6 +41,10 @@ struct Frame {
     SE3 Pose() {
         std::unique_lock<std::mutex> lck(pose_mutex_);
         return pose_;
+    }
+
+    Mat34f RT(){
+        return Pose().matrix().block<3, 4>(0, 0).cast <float>();
     }
 
     void SetPose(const SE3 &pose) {
